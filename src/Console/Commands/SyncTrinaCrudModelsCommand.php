@@ -20,7 +20,7 @@ class SyncTrinaCrudModelsCommand extends Command
         $this->info('🔍 Scanning for models that extend TrinaCrudModel...');
 
         $paths = Config::get('trinacrud.model_paths', []);
-        $paths[] = base_path('vendor/trinavo/laravel-trinacrud/src/Models');
+        $paths[] = base_path('vendor/trinavo/laravel-trina-crud/src/Models');
         $paths = array_filter($paths);
         $paths = array_unique($paths);
 

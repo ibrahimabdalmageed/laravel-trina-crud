@@ -5,14 +5,34 @@ namespace Trinavo\TrinaCrud\Http\Requests\ModelsController;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Support\Facades\App;
-use Trinavo\TrinaCrud\Models\TrinaCrudModel;
-use Trinavo\TrinaCrud\Services\TrinaCrudAuthorizationService;
+use Trinavo\TrinaCrud\Contracts\TrinaCrudAuthorizationServiceInterface;
+use Trinavo\TrinaCrud\Services\TrinaCrudModelHelper;
+use Trinavo\TrinaCrud\Services\TrinaCrudModelService;
 
 class ValidateTrinaCrudModelIndexRequest extends FormRequest
 {
+    /**
+     * @var TrinaCrudModelHelper
+     */
+    protected $modelHelper;
+
+    /**
+     * @var TrinaCrudAuthorizationServiceInterface
+     */
+    protected $authService;
+
+    public function __construct(
+        TrinaCrudModelHelper $modelHelper,
+        TrinaCrudAuthorizationServiceInterface $authService
+    ) {
+        $this->modelHelper = $modelHelper;
+        $this->authService = $authService;
+    }
+
+
     public function authorize(): bool
     {
-        $authService = App::make(TrinaCrudAuthorizationService::class);
+        $authService = App::make(TrinaCrudAuthorizationServiceInterface::class);
         return $authService->hasModelPermission($this->model ?? '', 'view');
     }
 
@@ -36,8 +56,12 @@ class ValidateTrinaCrudModelIndexRequest extends FormRequest
 
     private function validateModelParameter()
     {
-        if (!TrinaCrudModel::where('class_name', $this->model)->exists()) {
-            $this->errors()->add('model', 'Invalid model');
+        if (!$this->modelHelper->isModelExists($this->model)) {
+            throw new HttpResponseException(
+                response()->json([
+                    'message' => 'Invalid model',
+                ], 422)
+            );
         }
     }
 

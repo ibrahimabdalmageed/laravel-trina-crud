@@ -9,7 +9,8 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Schema;
 use Mockery;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
-use Trinavo\TrinaCrud\Services\TrinaCrudAuthorizationService;
+use Trinavo\TrinaCrud\Contracts\TrinaCrudAuthorizationServiceInterface;
+use Trinavo\TrinaCrud\Services\TrinaCrudModelHelper;
 use Trinavo\TrinaCrud\Services\TrinaCrudModelService;
 
 class TrinaCrudModelServiceTest extends TestCase
@@ -17,6 +18,7 @@ class TrinaCrudModelServiceTest extends TestCase
     use RefreshDatabase;
 
     protected $authorizationService;
+    protected $modelHelper;
     protected $trinaCrudModelService;
     protected $testModelClass;
 
@@ -33,12 +35,12 @@ class TrinaCrudModelServiceTest extends TestCase
         });
 
         // Mock the authorization service
-        $this->authorizationService = Mockery::mock(TrinaCrudAuthorizationService::class);
+        $this->authorizationService = Mockery::mock(TrinaCrudAuthorizationServiceInterface::class);
 
         // Create the service with the mocked authorization service
-        $this->trinaCrudModelService = new class($this->authorizationService) extends TrinaCrudModelService {
+        $this->modelHelper = new class() extends TrinaCrudModelHelper {
             // Override the method to avoid database lookup
-            protected function findTrinaCrudModel(string $modelName): ?object
+            public function findTrinaCrudModel(string $modelName): ?object
             {
                 // This will be set in the test
                 return $this->testTrinaCrudModel ?? null;
@@ -48,6 +50,11 @@ class TrinaCrudModelServiceTest extends TestCase
             public $testTrinaCrudModel;
         };
 
+
+        $this->trinaCrudModelService = new class($this->authorizationService, $this->modelHelper) extends TrinaCrudModelService {
+            // Property to hold the test model
+            public $testTrinaCrudModel;
+        };
         // Create a test model class
         $this->testModelClass = new class extends Model {
             protected $table = 'test_models';
@@ -78,7 +85,7 @@ class TrinaCrudModelServiceTest extends TestCase
         $trinaCrudModel->class_name = get_class($this->testModelClass);
 
         // Set the test model on the service
-        $this->trinaCrudModelService->testTrinaCrudModel = $trinaCrudModel;
+        $this->modelHelper->testTrinaCrudModel = $trinaCrudModel;
 
         // Set up expectations for the authorization service
         $this->authorizationService->shouldReceive('scopeAuthorizedRecords')
@@ -89,12 +96,12 @@ class TrinaCrudModelServiceTest extends TestCase
 
         $this->authorizationService->shouldReceive('filterAuthorizedColumns')
             ->once()
-            ->with('test_model', ['name', 'description'])
+            ->with($trinaCrudModel->class_name, ['name', 'description'])
             ->andReturn(['name', 'description']);
 
         // Call the method
         $result = $this->trinaCrudModelService->getModelRecords(
-            'test_model',
+            $trinaCrudModel->class_name,
             ['name', 'description'],
             null,
             [],
@@ -141,7 +148,7 @@ class TrinaCrudModelServiceTest extends TestCase
         $trinaCrudModel->class_name = get_class($this->testModelClass);
 
         // Set the test model on the service
-        $this->trinaCrudModelService->testTrinaCrudModel = $trinaCrudModel;
+        $this->modelHelper->testTrinaCrudModel = $trinaCrudModel;
 
         // Set up expectations for the authorization service
         $this->authorizationService->shouldReceive('scopeAuthorizedRecords')
@@ -245,7 +252,7 @@ class TrinaCrudModelServiceTest extends TestCase
         $trinaCrudModel->class_name = get_class($this->testModelClass);
 
         // Set the test model on the service
-        $this->trinaCrudModelService->testTrinaCrudModel = $trinaCrudModel;
+        $this->modelHelper->testTrinaCrudModel = $trinaCrudModel;
 
         // Set up expectations for the authorization service
         $this->authorizationService->shouldReceive('scopeAuthorizedRecords')

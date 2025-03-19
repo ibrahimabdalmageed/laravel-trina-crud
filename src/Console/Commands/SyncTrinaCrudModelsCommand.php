@@ -9,17 +9,18 @@ use ReflectionClass;
 use Trinavo\TrinaCrud\Models\TrinaCrudModel;
 use Trinavo\TrinaCrud\Traits\HasCrud;
 use Throwable;
+use Trinavo\TrinaCrud\Services\TrinaCrudModelHelper;
 
 class SyncTrinaCrudModelsCommand extends Command
 {
     protected $signature = 'trinacrud:sync-models';
     protected $description = 'Sync models that extend TrinaCrudModel with the trinacrud_models table';
 
-    public function handle()
+    public function handle(TrinaCrudModelHelper $modelHelper)
     {
         $this->info('🔍 Scanning for models that extend TrinaCrudModel...');
 
-        $paths = Config::get('trinacrud.model_paths', []);
+        $paths = Config::get('trina-crud.model_paths', []);
         $paths[] = base_path('vendor/trinavo/laravel-trina-crud/src/Models');
         $paths = array_filter($paths);
         $paths = array_unique($paths);
@@ -45,21 +46,23 @@ class SyncTrinaCrudModelsCommand extends Command
                     $reflection = new ReflectionClass($class);
 
                     if (in_array(HasCrud::class, class_uses_recursive($class)) && !$reflection->isAbstract()) {
-                        $modelName = $reflection->getShortName();
+                        $modelShortName = $reflection->getShortName();
                         $trinaCrudModels[] = $class;
 
                         TrinaCrudModel::firstOrCreate(
                             ['class_name' => $class],
                             [
-                                'caption' => Str::title(Str::snake($modelName, ' ')),
-                                'multi_caption' => Str::plural(Str::title(Str::snake($modelName, ' '))),
+                                'model_name' => $modelHelper->makeModelNameFromClass($class),
+                                'model_short' => $modelShortName,
+                                'caption' => Str::title(Str::snake($modelShortName, ' ')),
+                                'multi_caption' => Str::plural(Str::title(Str::snake($modelShortName, ' '))),
                                 'page_size' => 20,
                             ]
                         );
 
                         $this->call('trinacrud:sync-columns', ['modelName' => $class]);
 
-                        $this->info("✅ Synced: $modelName");
+                        $this->info("✅ Synced: $modelShortName");
                     }
                 } catch (Throwable $e) {
                     $this->warn("⚠️ Reflection failed for: {$class} - {$e->getMessage()}");

@@ -7,9 +7,9 @@ use Illuminate\Support\Facades\Schema;
 use Trinavo\TrinaCrud\Tests\TestCase;
 use Trinavo\TrinaCrud\Models\TrinaCrudModel;
 use Trinavo\TrinaCrud\Services\TrinaCrudModelService;
-use Trinavo\TrinaCrud\Services\TrinaCrudAuthorizationService;
 use Mockery;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Trinavo\TrinaCrud\Contracts\TrinaCrudAuthorizationServiceInterface;
 
 class TrinaCrudModelControllerFeatureTest extends TestCase
 {
@@ -37,6 +37,8 @@ class TrinaCrudModelControllerFeatureTest extends TestCase
             'class_name' => 'TestUser',
             'caption' => 'Test User',
             'multi_caption' => 'Test Users',
+            'model_name' => 'test_user',
+            'model_short' => 'test_user',
             'page_size' => 10,
             'public_model' => true,
             'order_by' => 'id'
@@ -54,7 +56,7 @@ class TrinaCrudModelControllerFeatureTest extends TestCase
         ]);
 
         // Create mocks for common services
-        $this->authService = Mockery::mock(TrinaCrudAuthorizationService::class);
+        $this->authService = Mockery::mock(TrinaCrudAuthorizationServiceInterface::class);
         $this->modelService = Mockery::mock(TrinaCrudModelService::class);
 
         // Bind the mock to the container

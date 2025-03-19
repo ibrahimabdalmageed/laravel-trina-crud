@@ -5,15 +5,21 @@ namespace Trinavo\TrinaCrud\Services;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
-use Trinavo\TrinaCrud\Models\TrinaCrudModel;
+use Trinavo\TrinaCrud\Contracts\TrinaCrudAuthorizationServiceInterface;
+
 
 class TrinaCrudModelService
 {
-    protected $authorizationService;
+    protected TrinaCrudAuthorizationServiceInterface $authorizationService;
 
-    public function __construct(TrinaCrudAuthorizationService $authorizationService)
-    {
+    protected TrinaCrudModelHelper $modelHelper;
+
+    public function __construct(
+        TrinaCrudAuthorizationServiceInterface $authorizationService,
+        TrinaCrudModelHelper $modelHelper
+    ) {
         $this->authorizationService = $authorizationService;
+        $this->modelHelper = $modelHelper;
     }
 
     /**
@@ -37,7 +43,7 @@ class TrinaCrudModelService
         int $perPage = 15
     ): LengthAwarePaginator {
         // Find the model
-        $trinaCrudModel = $this->findTrinaCrudModel($modelName);
+        $trinaCrudModel = $this->modelHelper->findTrinaCrudModel($modelName);
 
         if (!$trinaCrudModel) {
             throw new NotFoundHttpException('Model not found');
@@ -93,7 +99,7 @@ class TrinaCrudModelService
         array $relationColumns = []
     ): Model {
         // Find the model
-        $trinaCrudModel = $this->findTrinaCrudModel($modelName);
+        $trinaCrudModel = $this->modelHelper->findTrinaCrudModel($modelName);
 
         if (!$trinaCrudModel) {
             throw new NotFoundHttpException('Model not found');
@@ -142,7 +148,7 @@ class TrinaCrudModelService
     public function createModelRecord(string $modelName, array $data): Model
     {
         // Find the model
-        $trinaCrudModel = $this->findTrinaCrudModel($modelName);
+        $trinaCrudModel = $this->modelHelper->findTrinaCrudModel($modelName);
 
         if (!$trinaCrudModel) {
             throw new NotFoundHttpException('Model not found');
@@ -175,7 +181,7 @@ class TrinaCrudModelService
     public function updateModelRecord(string $modelName, int $id, array $data): Model
     {
         // Find the model
-        $trinaCrudModel = $this->findTrinaCrudModel($modelName);
+        $trinaCrudModel = $this->modelHelper->findTrinaCrudModel($modelName);
 
         if (!$trinaCrudModel) {
             throw new NotFoundHttpException('Model not found');
@@ -222,7 +228,7 @@ class TrinaCrudModelService
     public function deleteModelRecord(string $modelName, int $id): bool
     {
         // Find the model
-        $trinaCrudModel = $this->findTrinaCrudModel($modelName);
+        $trinaCrudModel = $this->modelHelper->findTrinaCrudModel($modelName);
 
         if (!$trinaCrudModel) {
             throw new NotFoundHttpException('Model not found');
@@ -246,16 +252,5 @@ class TrinaCrudModelService
 
         // Delete the record
         return $record->delete();
-    }
-
-    /**
-     * Find a TrinaCrudModel by name
-     *
-     * @param string $modelName The name of the model
-     * @return TrinaCrudModel|null
-     */
-    protected function findTrinaCrudModel(string $modelName): ?object
-    {
-        return TrinaCrudModel::where('class_name', $modelName)->first();
     }
 }

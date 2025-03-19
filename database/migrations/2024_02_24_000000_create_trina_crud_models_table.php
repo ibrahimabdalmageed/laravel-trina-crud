@@ -10,6 +10,8 @@ return new class extends Migration {
         Schema::create('trina_crud_models', function (Blueprint $table) {
             $table->id();
             $table->string('class_name', 100)->unique();
+            $table->string('model_name', 100)->unique();
+            $table->string('model_short', 100)->index();
             $table->string('caption', 100)->nullable();
             $table->string('multi_caption', 100)->nullable();
             $table->integer('page_size')->default(20);

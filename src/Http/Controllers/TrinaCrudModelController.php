@@ -6,7 +6,6 @@ use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Trinavo\TrinaCrud\Http\Requests\ModelsController\ValidateTrinaCrudModelCreateRequest;
 use Trinavo\TrinaCrud\Http\Requests\ModelsController\ValidateTrinaCrudModelIndexRequest;
-use Trinavo\TrinaCrud\Services\TrinaCrudAuthorizationService;
 use Trinavo\TrinaCrud\Services\TrinaCrudModelService;
 
 class TrinaCrudModelController extends Controller
@@ -23,10 +22,8 @@ class TrinaCrudModelController extends Controller
 
     public function __construct(
         TrinaCrudModelService $modelService,
-        TrinaCrudAuthorizationService $authService
     ) {
         $this->modelService = $modelService;
-        $this->authService = $authService;
     }
 
     /**

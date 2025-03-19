@@ -4,11 +4,11 @@ namespace Trinavo\TrinaCrud\Services;
 
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
+use Trinavo\TrinaCrud\Contracts\TrinaCrudAuthorizationServiceInterface;
 use Trinavo\TrinaCrud\Models\TrinaCrudModel;
 
-class TrinaCrudAuthorizationService
+class SpatiePermissionAuthorizationService implements TrinaCrudAuthorizationServiceInterface
 {
     /**
      * Check if the user has permission to access a model
@@ -25,23 +25,11 @@ class TrinaCrudAuthorizationService
             return false;
         }
 
-        // Convert action to Laravel's standard ability names
-        $ability = match ($action) {
-            'view' => 'viewAny',
-            'create' => 'create',
-            'update' => 'update',
-            'delete' => 'delete',
-            default => $action
-        };
+        // Convert camelCase to kebab-case for permission names
+        $permissionName = Str::kebab($action) . '-' . Str::kebab($modelName);
 
-        // First check if there's a policy for the model
-        $modelClass = $this->resolveModelClass($modelName);
-        if ($modelClass && class_exists($modelClass)) {
-            return Gate::allows($ability, $modelClass);
-        }
-
-        // Fallback to a generic permission check
-        return Gate::allows("{$action}-{$modelName}");
+        // Check if user has the permission
+        return $user->hasPermissionTo($permissionName);
     }
 
     /**
@@ -60,9 +48,12 @@ class TrinaCrudAuthorizationService
             return false;
         }
 
-        // First check if there's a specific column permission
-        if (Gate::has("{$action}-{$modelName}-{$columnName}")) {
-            return Gate::allows("{$action}-{$modelName}-{$columnName}");
+        // Convert camelCase to kebab-case for permission names
+        $columnPermission = Str::kebab($action) . '-' . Str::kebab($modelName) . '-' . Str::kebab($columnName);
+
+        // Check for column-specific permission first
+        if ($user->hasPermissionTo($columnPermission)) {
+            return true;
         }
 
         // Fallback to model permission
@@ -90,6 +81,17 @@ class TrinaCrudAuthorizationService
             return $query;
         }
 
+        // If user has the role with all permissions, return all records
+        if ($user->hasRole('super-admin')) {
+            return $query;
+        }
+
+        // If user has the view-all-{model} permission, return all records
+        if ($user->hasPermissionTo('view-all-' . Str::kebab($modelName))) {
+            return $query;
+        }
+
+        // Otherwise only return records owned by the user
         $query->ownedBy($user);
 
         return $query;
@@ -276,10 +278,6 @@ class TrinaCrudAuthorizationService
     protected function getRelatedModelName(string $modelName, string $relation): string
     {
         // Try to determine the related model from the relation name
-        // This is a simplistic approach - in a real implementation, you might
-        // need to inspect the actual relation method
-
-        // Convert camelCase to StudlyCase for model name
         return Str::studly(Str::singular($relation));
     }
 }

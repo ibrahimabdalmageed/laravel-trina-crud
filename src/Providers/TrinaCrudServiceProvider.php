@@ -3,6 +3,9 @@
 namespace Trinavo\TrinaCrud\Providers;
 
 use Illuminate\Support\ServiceProvider;
+use Trinavo\TrinaCrud\Contracts\TrinaCrudAuthorizationServiceInterface;
+use Trinavo\TrinaCrud\Services\AllowAllAuthorizationService;
+use Trinavo\TrinaCrud\Services\SpatiePermissionAuthorizationService;
 
 class TrinaCrudServiceProvider extends ServiceProvider
 {
@@ -30,8 +33,8 @@ class TrinaCrudServiceProvider extends ServiceProvider
     {
         // Merge package config
         $this->mergeConfigFrom(
-            __DIR__ . '/../../config/trinacrud.php',
-            'trinacrud'
+            __DIR__ . '/../../config/trina-crud.php',
+            'trina-crud'
         );
 
         $this->commands([
@@ -43,6 +46,25 @@ class TrinaCrudServiceProvider extends ServiceProvider
             return new \Trinavo\TrinaCrud\Services\Generators\DartModelGeneratorService();
         });
 
-        $this->app->singleton(\Trinavo\TrinaCrud\Services\TrinaCrudAuthorizationService::class);
+        $this->registerAuthServiceProvider();
+    }
+
+
+    public function registerAuthServiceProvider()
+    {
+        // Get authorization type from config, default to 'default'
+        $authType = config('trina-crud.authorization_type', 'default');
+
+        // Bind the appropriate implementation based on the config
+        switch ($authType) {
+            case 'allow_all':
+                $this->app->bind(TrinaCrudAuthorizationServiceInterface::class, AllowAllAuthorizationService::class);
+                break;
+            case 'spatie':
+                $this->app->bind(TrinaCrudAuthorizationServiceInterface::class, SpatiePermissionAuthorizationService::class);
+                break;
+            default:
+                break;
+        }
     }
 }

@@ -1,6 +1,6 @@
 <?php
 
-namespace FirasSaidi\TrinaCrud\Tests\Feature\Http\Requests;
+namespace Trinavo\TrinaCrud\Tests\Feature\Http\Requests;
 
 use Trinavo\TrinaCrud\Tests\TestCase;
 use Trinavo\TrinaCrud\Http\Requests\ModelsController\ValidateTrinaCrudModelIndexRequest;

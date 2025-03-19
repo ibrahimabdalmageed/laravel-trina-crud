@@ -1,6 +1,6 @@
 <?php
 
-namespace FirasSaidi\TrinaCrud\Tests\Feature\Http\Controllers;
+namespace Trinavo\TrinaCrud\Tests\Feature\Http\Controllers;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Schema;

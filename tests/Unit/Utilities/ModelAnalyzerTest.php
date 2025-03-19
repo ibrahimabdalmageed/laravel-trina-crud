@@ -1,8 +1,8 @@
 <?php
 
-namespace FirasSaidi\TrinaCrud\Tests\Unit\Utilities;
+namespace Trinavo\TrinaCrud\Tests\Unit\Utilities;
 
-use FirasSaidi\TrinaCrud\Tests\TestCase;
+use Trinavo\TrinaCrud\Tests\TestCase;
 use Trinavo\TrinaCrud\Utilities\ModelAnalyzer;
 
 class ModelAnalyzerTest extends TestCase

@@ -29,7 +29,6 @@ class SyncTrinaCrudModelsCommand extends Command
             return;
         }
 
-        $flexiCrudModels = [];
         foreach ($paths as $path) {
             $this->info("🔍 Scanning: $path");
             if (!is_dir($path)) {

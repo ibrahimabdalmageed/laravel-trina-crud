@@ -10,12 +10,12 @@ use Trinavo\TrinaCrud\Models\TrinaCrudModel;
 class TrinaCrudModelService
 {
     protected $authorizationService;
-    
-    public function __construct(AuthorizationService $authorizationService)
+
+    public function __construct(TrinaCrudAuthorizationService $authorizationService)
     {
         $this->authorizationService = $authorizationService;
     }
-    
+
     /**
      * Get a paginated list of model records with filtering and authorization
      *
@@ -38,42 +38,42 @@ class TrinaCrudModelService
     ): LengthAwarePaginator {
         // Find the model
         $trinaCrudModel = $this->findTrinaCrudModel($modelName);
-        
+
         if (!$trinaCrudModel) {
             throw new NotFoundHttpException('Model not found');
         }
-        
+
         // Get the model class
         $modelClass = $trinaCrudModel->class_name;
-        
+
         // Create a new query
         $query = app($modelClass)->query();
-        
+
         // Apply ownership filtering
         $query = $this->authorizationService->scopeAuthorizedRecords($query, $modelName);
-        
+
         // Filter columns based on permissions
         $authorizedColumns = $this->authorizationService->filterAuthorizedColumns($modelName, $columns);
-        
+
         // Select only authorized columns if specified
         if (!empty($authorizedColumns)) {
             $query->select($authorizedColumns);
         }
-        
+
         // Load authorized relations
         if ($with) {
             $query = $this->authorizationService->loadAuthorizedRelations($query, $modelName, $with, $relationColumns);
         }
-        
+
         // Apply filters
         if (!empty($filters)) {
             $query = $this->authorizationService->applyAuthorizedFilters($query, $modelName, $filters);
         }
-        
+
         // Paginate the results
         return $query->paginate($perPage);
     }
-    
+
     /**
      * Get a single model record by ID with authorization
      *
@@ -94,43 +94,43 @@ class TrinaCrudModelService
     ): Model {
         // Find the model
         $trinaCrudModel = $this->findTrinaCrudModel($modelName);
-        
+
         if (!$trinaCrudModel) {
             throw new NotFoundHttpException('Model not found');
         }
-        
+
         // Get the model class
         $modelClass = $trinaCrudModel->class_name;
-        
+
         // Create a new query
         $query = app($modelClass)->query();
-        
+
         // Apply ownership filtering
         $query = $this->authorizationService->scopeAuthorizedRecords($query, $modelName);
-        
+
         // Filter columns based on permissions
         $authorizedColumns = $this->authorizationService->filterAuthorizedColumns($modelName, $columns);
-        
+
         // Select only authorized columns if specified
         if (!empty($authorizedColumns)) {
             $query->select($authorizedColumns);
         }
-        
+
         // Load authorized relations
         if ($with) {
             $query = $this->authorizationService->loadAuthorizedRelations($query, $modelName, $with, $relationColumns);
         }
-        
+
         // Find the record
         $record = $query->find($id);
-        
+
         if (!$record) {
             throw new NotFoundHttpException('Record not found');
         }
-        
+
         return $record;
     }
-    
+
     /**
      * Create a new model record with authorization
      *
@@ -143,14 +143,14 @@ class TrinaCrudModelService
     {
         // Find the model
         $trinaCrudModel = $this->findTrinaCrudModel($modelName);
-        
+
         if (!$trinaCrudModel) {
             throw new NotFoundHttpException('Model not found');
         }
-        
+
         // Get the model class
         $modelClass = $trinaCrudModel->class_name;
-        
+
         // Filter data based on permissions
         $authorizedData = [];
         foreach ($data as $key => $value) {
@@ -158,11 +158,11 @@ class TrinaCrudModelService
                 $authorizedData[$key] = $value;
             }
         }
-        
+
         // Create the record
         return app($modelClass)->create($authorizedData);
     }
-    
+
     /**
      * Update a model record with authorization
      *
@@ -176,27 +176,27 @@ class TrinaCrudModelService
     {
         // Find the model
         $trinaCrudModel = $this->findTrinaCrudModel($modelName);
-        
+
         if (!$trinaCrudModel) {
             throw new NotFoundHttpException('Model not found');
         }
-        
+
         // Get the model class
         $modelClass = $trinaCrudModel->class_name;
-        
+
         // Create a new query
         $query = app($modelClass)->query();
-        
+
         // Apply ownership filtering
         $query = $this->authorizationService->scopeAuthorizedRecords($query, $modelName);
-        
+
         // Find the record
         $record = $query->find($id);
-        
+
         if (!$record) {
             throw new NotFoundHttpException('Record not found');
         }
-        
+
         // Filter data based on permissions
         $authorizedData = [];
         foreach ($data as $key => $value) {
@@ -204,13 +204,13 @@ class TrinaCrudModelService
                 $authorizedData[$key] = $value;
             }
         }
-        
+
         // Update the record
         $record->update($authorizedData);
-        
+
         return $record;
     }
-    
+
     /**
      * Delete a model record with authorization
      *
@@ -223,31 +223,31 @@ class TrinaCrudModelService
     {
         // Find the model
         $trinaCrudModel = $this->findTrinaCrudModel($modelName);
-        
+
         if (!$trinaCrudModel) {
             throw new NotFoundHttpException('Model not found');
         }
-        
+
         // Get the model class
         $modelClass = $trinaCrudModel->class_name;
-        
+
         // Create a new query
         $query = app($modelClass)->query();
-        
+
         // Apply ownership filtering
         $query = $this->authorizationService->scopeAuthorizedRecords($query, $modelName);
-        
+
         // Find the record
         $record = $query->find($id);
-        
+
         if (!$record) {
             throw new NotFoundHttpException('Record not found');
         }
-        
+
         // Delete the record
         return $record->delete();
     }
-    
+
     /**
      * Find a TrinaCrudModel by name
      *
@@ -258,4 +258,4 @@ class TrinaCrudModelService
     {
         return TrinaCrudModel::where('class_name', $modelName)->first();
     }
-} 
+}

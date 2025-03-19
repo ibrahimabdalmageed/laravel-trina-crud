@@ -6,7 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Trinavo\TrinaCrud\Http\Requests\ModelsController\ValidateTrinaCrudModelCreateRequest;
 use Trinavo\TrinaCrud\Http\Requests\ModelsController\ValidateTrinaCrudModelIndexRequest;
-use Trinavo\TrinaCrud\Services\AuthorizationService;
+use Trinavo\TrinaCrud\Services\TrinaCrudAuthorizationService;
 use Trinavo\TrinaCrud\Services\TrinaCrudModelService;
 
 class TrinaCrudModelController extends Controller
@@ -17,12 +17,14 @@ class TrinaCrudModelController extends Controller
     protected $modelService;
 
     /**
-     * @var AuthorizationService
+     * @var TrinaCrudAuthorizationService
      */
     protected $authService;
 
-    public function __construct(TrinaCrudModelService $modelService, AuthorizationService $authService)
-    {
+    public function __construct(
+        TrinaCrudModelService $modelService,
+        TrinaCrudAuthorizationService $authService
+    ) {
         $this->modelService = $modelService;
         $this->authService = $authService;
     }
@@ -33,20 +35,21 @@ class TrinaCrudModelController extends Controller
      * @param ValidateTrinaCrudModelIndexRequest $request
      * @return \Illuminate\Http\JsonResponse|\Illuminate\Pagination\LengthAwarePaginator
      */
-    public function index(ValidateTrinaCrudModelIndexRequest $request)
-    {
+    public function index(
+        String $model,
+        ValidateTrinaCrudModelIndexRequest $request
+    ) {
         try {
-            $modelName = $request->model;
             $columns = $request->input('columns', []);
-            $with = $request->has('with') ? 
-                (is_array($request->with) ? $request->with : explode(',', $request->with)) : 
+            $with = $request->has('with') ?
+                (is_array($request->with) ? $request->with : explode(',', $request->with)) :
                 null;
             $relationColumns = $request->input('relation_columns', []);
             $filters = $request->input('filters', []);
             $perPage = $request->input('per_page', 15);
-            
+
             return $this->modelService->getModelRecords(
-                $modelName,
+                $model,
                 $columns,
                 $with,
                 $relationColumns,
@@ -72,11 +75,11 @@ class TrinaCrudModelController extends Controller
         try {
             $modelName = $request->model;
             $columns = $request->input('columns', []);
-            $with = $request->has('with') ? 
-                (is_array($request->with) ? $request->with : explode(',', $request->with)) : 
+            $with = $request->has('with') ?
+                (is_array($request->with) ? $request->with : explode(',', $request->with)) :
                 null;
             $relationColumns = $request->input('relation_columns', []);
-            
+
             return $this->modelService->getModelRecord(
                 $modelName,
                 $id,
@@ -101,15 +104,15 @@ class TrinaCrudModelController extends Controller
     {
         try {
             $modelName = $request->model;
-            
+
             // Check if user has permission to create this model
             if (!$this->authService->hasModelPermission($modelName, 'create')) {
                 return response()->json(['error' => 'Unauthorized'], 403);
             }
-            
+
             // Filter input data to exclude non-column fields
             $data = collect($request->all())->except(['model'])->toArray();
-            
+
             return $this->modelService->createModelRecord($modelName, $data);
         } catch (\Symfony\Component\HttpKernel\Exception\NotFoundHttpException $e) {
             return response()->json(['error' => $e->getMessage()], 404);
@@ -129,15 +132,15 @@ class TrinaCrudModelController extends Controller
     {
         try {
             $modelName = $request->model;
-            
+
             // Check if user has permission to update this model
             if (!$this->authService->hasModelPermission($modelName, 'update')) {
                 return response()->json(['error' => 'Unauthorized'], 403);
             }
-            
+
             // Filter input data to exclude non-column fields
             $data = collect($request->all())->except(['model'])->toArray();
-            
+
             return $this->modelService->updateModelRecord($modelName, $id, $data);
         } catch (\Symfony\Component\HttpKernel\Exception\NotFoundHttpException $e) {
             return response()->json(['error' => $e->getMessage()], 404);
@@ -157,14 +160,14 @@ class TrinaCrudModelController extends Controller
     {
         try {
             $modelName = $request->model;
-            
+
             // Check if user has permission to delete this model
             if (!$this->authService->hasModelPermission($modelName, 'delete')) {
                 return response()->json(['error' => 'Unauthorized'], 403);
             }
-            
+
             $result = $this->modelService->deleteModelRecord($modelName, $id);
-            
+
             return response()->json(['success' => $result]);
         } catch (\Symfony\Component\HttpKernel\Exception\NotFoundHttpException $e) {
             return response()->json(['error' => $e->getMessage()], 404);

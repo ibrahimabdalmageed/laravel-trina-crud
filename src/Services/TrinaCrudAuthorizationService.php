@@ -7,9 +7,8 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
 use Trinavo\TrinaCrud\Models\TrinaCrudModel;
-use Trinavo\TrinaCrud\Traits\Ownable;
 
-class AuthorizationService
+class TrinaCrudAuthorizationService
 {
     /**
      * Check if the user has permission to access a model

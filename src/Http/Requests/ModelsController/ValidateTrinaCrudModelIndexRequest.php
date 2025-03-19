@@ -6,33 +6,39 @@ use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Support\Facades\App;
 use Trinavo\TrinaCrud\Models\TrinaCrudModel;
-use Trinavo\TrinaCrud\Services\AuthorizationService;
-
-/**
- * @property string $model
- */
+use Trinavo\TrinaCrud\Services\TrinaCrudAuthorizationService;
 
 class ValidateTrinaCrudModelIndexRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        $authService = App::make(AuthorizationService::class);
+        $authService = App::make(TrinaCrudAuthorizationService::class);
         return $authService->hasModelPermission($this->model ?? '', 'view');
     }
 
     public function rules(): array
     {
-        return [
-            'model' => [
-                'required',
-                'string',
-                function ($attribute, $value, $fail) {
-                    if (!TrinaCrudModel::where('class_name', $value)->exists()) {
-                        $fail("Invalid model");
-                    }
-                },
-            ],
-        ];
+        return [];
+    }
+
+    /**
+     * Configure the validator instance.
+     *
+     * @param \Illuminate\Validation\Validator $validator
+     * @return void
+     */
+    public function withValidator($validator)
+    {
+        $validator->after(function ($validator) {
+            $this->validateModelParameter();
+        });
+    }
+
+    private function validateModelParameter()
+    {
+        if (!TrinaCrudModel::where('class_name', $this->model)->exists()) {
+            $this->errors()->add('model', 'Invalid model');
+        }
     }
 
     public function messages(): array

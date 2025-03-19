@@ -42,8 +42,7 @@ class TrinaCrudServiceProvider extends ServiceProvider
         $this->app->singleton('dart-model-generator', function () {
             return new \Trinavo\TrinaCrud\Services\Generators\DartModelGeneratorService();
         });
-        
-        // Register the AuthorizationService
-        $this->app->singleton(\Trinavo\TrinaCrud\Services\AuthorizationService::class);
+
+        $this->app->singleton(\Trinavo\TrinaCrud\Services\TrinaCrudAuthorizationService::class);
     }
 }

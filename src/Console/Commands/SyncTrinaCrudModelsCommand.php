@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Str;
 use ReflectionClass;
 use Trinavo\TrinaCrud\Models\TrinaCrudModel;
+use Trinavo\TrinaCrud\Traits\HasCrud;
 use Throwable;
 
 class SyncTrinaCrudModelsCommand extends Command
@@ -44,7 +45,7 @@ class SyncTrinaCrudModelsCommand extends Command
                 try {
                     $reflection = new ReflectionClass($class);
 
-                    if ($reflection->isSubclassOf('Trinavo\TrinaCrud\Support\TrinaCrudModel') && !$reflection->isAbstract()) {
+                    if (in_array(HasCrud::class, class_uses_recursive($class)) && !$reflection->isAbstract()) {
                         $modelName = $reflection->getShortName();
                         $trinaCrudModels[] = $class;
 

@@ -7,9 +7,9 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration {
     public function up(): void
     {
-        Schema::create('flexi_columns', function (Blueprint $table) {
+        Schema::create('trina_crud_columns', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('flexi_model_id')->constrained('flexi_models')->onDelete('cascade');
+            $table->foreignId('trina_crud_model_id')->constrained('trina_crud_models')->onDelete('cascade');
             $table->string('column_name');
             $table->string('column_db_type');
             $table->string('column_user_type')->nullable();
@@ -22,12 +22,12 @@ return new class extends Migration {
             $table->boolean('hide')->default(false);
             $table->timestamps();
 
-            $table->unique(['flexi_model_id', 'column_name']);
+            $table->unique(['trina_crud_model_id', 'column_name']);
         });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('flexi_columns');
+        Schema::dropIfExists('trina_crud_columns');
     }
 };

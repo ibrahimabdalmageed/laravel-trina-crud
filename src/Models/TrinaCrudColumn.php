@@ -5,10 +5,11 @@ namespace Trinavo\TrinaCrud\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-
+use Trinavo\TrinaCrud\Traits\HasCrud;
 class TrinaCrudColumn extends Model
 {
     use HasFactory;
+    use HasCrud;
 
     protected $guarded = [];
 

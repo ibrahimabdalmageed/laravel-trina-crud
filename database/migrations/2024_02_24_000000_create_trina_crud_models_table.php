@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration {
     public function up(): void
     {
-        Schema::create('flexi_models', function (Blueprint $table) {
+        Schema::create('trina_crud_models', function (Blueprint $table) {
             $table->id();
             $table->string('class_name', 100)->unique();
             $table->string('caption', 100)->nullable();
@@ -21,6 +21,6 @@ return new class extends Migration {
 
     public function down(): void
     {
-        Schema::dropIfExists('flexi_models');
+        Schema::dropIfExists('trina_crud_models');
     }
 };

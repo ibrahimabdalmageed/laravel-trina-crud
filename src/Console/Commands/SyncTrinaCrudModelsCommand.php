@@ -9,14 +9,14 @@ use ReflectionClass;
 use Trinavo\TrinaCrud\Models\TrinaCrudModel;
 use Trinavo\TrinaCrud\Traits\HasCrud;
 use Throwable;
-use Trinavo\TrinaCrud\Services\TrinaCrudModelService;
+use Trinavo\TrinaCrud\Contracts\ModelServiceInterface;
 
 class SyncTrinaCrudModelsCommand extends Command
 {
     protected $signature = 'trinacrud:sync-models';
     protected $description = 'Sync models that extend TrinaCrudModel with the trinacrud_models table';
 
-    public function handle(TrinaCrudModelService $modelService)
+    public function handle(ModelServiceInterface $modelService)
     {
         $this->info('🔍 Scanning for models that extend TrinaCrudModel...');
 
@@ -29,6 +29,8 @@ class SyncTrinaCrudModelsCommand extends Command
             $this->warn('⚠️ No paths configured for scanning.');
             return;
         }
+
+        $trinaCrudModels = [];
 
         foreach ($paths as $path) {
             $this->info("🔍 Scanning: $path");
@@ -60,7 +62,7 @@ class SyncTrinaCrudModelsCommand extends Command
                             ]
                         );
 
-                        $this->call('trinacrud:sync-columns', ['modelName' => $class]);
+                        $this->call('trinacrud:sync-columns', ['model' => $class]);
 
                         $this->info("✅ Synced: $modelShortName");
                     }

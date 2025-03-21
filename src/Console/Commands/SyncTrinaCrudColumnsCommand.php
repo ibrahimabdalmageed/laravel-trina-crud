@@ -3,7 +3,7 @@
 namespace Trinavo\TrinaCrud\Console\Commands;
 
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\DB;
+use Trinavo\TrinaCrud\Utilities\SchemaHelper;
 use Trinavo\TrinaCrud\Models\TrinaCrudModel;
 use Trinavo\TrinaCrud\Models\TrinaCrudColumn;
 
@@ -22,41 +22,35 @@ class SyncTrinaCrudColumnsCommand extends Command
             return;
         }
 
-
         if (!class_exists($modelClass)) {
             $this->error("❌ Model class '{$modelClass}' does not exist.");
             return;
         }
 
         $model = app($modelClass);
-
         $table = $model->getTable();
-        $columns = DB::getSchemaBuilder()->getColumnListing($table);
-
+        $columns = SchemaHelper::getColumnListing($table);
         $existingColumns = TrinaCrudColumn::where('trina_crud_model_id', $trinaCrudModel->id)->pluck('column_name')->toArray();
 
         foreach ($columns as $columnName) {
+            $columnInfo = SchemaHelper::getColumnInfo($table, $columnName);
 
-            //mysql or pgsql
-            if (DB::getDriverName() === 'mysql') {
-                $columnInfo = DB::selectOne("SHOW COLUMNS FROM {$table} WHERE Field = ?", [$columnName]);
-            } elseif (DB::getDriverName() === 'pgsql') {
-                $columnInfo = DB::selectOne("SELECT column_name, data_type FROM information_schema.columns WHERE table_name = ? AND column_name = ?", [$table, $columnName]);
-            } elseif (DB::getDriverName() === 'sqlite') {
-                $columnInfo = DB::selectOne("PRAGMA table_info({$table}) WHERE name = ?", [$columnName]);
+            if (!$columnInfo) {
+                $this->warn("⚠️ Could not retrieve column information for: {$columnName}");
+                continue;
             }
 
             $data = [
                 'trina_crud_model_id' => $trinaCrudModel->id,
                 'column_name' => $columnName,
-                'column_db_type' => $columnInfo->Type,
+                'column_db_type' => $columnInfo['type'],
                 'column_user_type' => null, // Can be set later
                 'column_label' => ucwords(str_replace('_', ' ', $columnName)),
-                'required' => $columnInfo->Null === 'NO',
-                'default_value' => $columnInfo->Default,
+                'required' => $columnInfo['required'],
+                'default_value' => $columnInfo['default'],
                 'grid_order' => null,
                 'edit_order' => null,
-                'size' => preg_match('/\((\d+)\)/', $columnInfo->Type, $matches) ? (int) $matches[1] : null,
+                'size' => $columnInfo['size'],
                 'hide' => false,
             ];
 

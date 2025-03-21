@@ -56,7 +56,6 @@ class TrinaCrudModelControllerFeatureTest extends TestCase
         ]);
 
         // Create mocks for common services
-        $this->authService = Mockery::mock(TrinaCrudAuthorizationServiceInterface::class);
         $this->modelService = Mockery::mock(TrinaCrudModelService::class);
 
         // Bind the mock to the container

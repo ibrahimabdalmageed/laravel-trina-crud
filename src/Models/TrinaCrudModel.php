@@ -13,6 +13,24 @@ class TrinaCrudModel extends Model
 
     protected $guarded = [];
 
+    protected $fillable = [
+        'class_name',
+        'model_name',
+        'model_short',
+        'caption',
+        'multi_caption',
+        'page_size',
+        'public_model',
+        'order_by',
+    ];
+
+    //cast
+    protected $casts = [
+        'public_model' => 'boolean',
+        'created_at' => 'timestamp',
+        'updated_at' => 'timestamp',
+    ];
+
 
     public function columns()
     {

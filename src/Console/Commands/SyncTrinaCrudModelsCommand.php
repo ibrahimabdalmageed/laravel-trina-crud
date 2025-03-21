@@ -9,14 +9,14 @@ use ReflectionClass;
 use Trinavo\TrinaCrud\Models\TrinaCrudModel;
 use Trinavo\TrinaCrud\Traits\HasCrud;
 use Throwable;
-use Trinavo\TrinaCrud\Services\TrinaCrudModelHelper;
+use Trinavo\TrinaCrud\Services\TrinaCrudModelService;
 
 class SyncTrinaCrudModelsCommand extends Command
 {
     protected $signature = 'trinacrud:sync-models';
     protected $description = 'Sync models that extend TrinaCrudModel with the trinacrud_models table';
 
-    public function handle(TrinaCrudModelHelper $modelHelper)
+    public function handle(TrinaCrudModelService $modelService)
     {
         $this->info('🔍 Scanning for models that extend TrinaCrudModel...');
 
@@ -52,7 +52,7 @@ class SyncTrinaCrudModelsCommand extends Command
                         TrinaCrudModel::firstOrCreate(
                             ['class_name' => $class],
                             [
-                                'model_name' => $modelHelper->makeModelNameFromClass($class),
+                                'model_name' => $modelService->makeModelNameFromClass($class),
                                 'model_short' => $modelShortName,
                                 'caption' => Str::title(Str::snake($modelShortName, ' ')),
                                 'multi_caption' => Str::plural(Str::title(Str::snake($modelShortName, ' '))),

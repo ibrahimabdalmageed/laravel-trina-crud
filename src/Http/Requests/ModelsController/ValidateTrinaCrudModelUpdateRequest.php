@@ -3,9 +3,13 @@
 namespace Trinavo\TrinaCrud\Http\Requests\ModelsController;
 
 
-class ValidateTrinaCrudModelCreateRequest extends ModelRequestValidator
+/**
+ * @property string $model
+ */
+
+class ValidateTrinaCrudModelUpdateRequest extends ModelRequestValidator
 {
-    protected $action = 'create';
+    protected $action = 'update';
 
     public function rules(): array
     {

@@ -9,12 +9,12 @@ use Trinavo\TrinaCrud\Models\TrinaCrudColumn;
 
 class SyncTrinaCrudColumnsCommand extends Command
 {
-    protected $signature = 'trinacrud:sync-columns {modelName}';
+    protected $signature = 'trinacrud:sync-columns {model}';
     protected $description = 'Sync columns for a specific model with the trinacrud_columns table';
 
     public function handle()
     {
-        $modelClass = $this->argument('modelName');
+        $modelClass = $this->argument('model');
         $trinaCrudModel = TrinaCrudModel::where('class_name', $modelClass)->first();
 
         if (!$trinaCrudModel) {
@@ -36,7 +36,15 @@ class SyncTrinaCrudColumnsCommand extends Command
         $existingColumns = TrinaCrudColumn::where('trina_crud_model_id', $trinaCrudModel->id)->pluck('column_name')->toArray();
 
         foreach ($columns as $columnName) {
-            $columnInfo = DB::selectOne("SHOW COLUMNS FROM {$table} WHERE Field = ?", [$columnName]);
+
+            //mysql or pgsql
+            if (DB::getDriverName() === 'mysql') {
+                $columnInfo = DB::selectOne("SHOW COLUMNS FROM {$table} WHERE Field = ?", [$columnName]);
+            } elseif (DB::getDriverName() === 'pgsql') {
+                $columnInfo = DB::selectOne("SELECT column_name, data_type FROM information_schema.columns WHERE table_name = ? AND column_name = ?", [$table, $columnName]);
+            } elseif (DB::getDriverName() === 'sqlite') {
+                $columnInfo = DB::selectOne("PRAGMA table_info({$table}) WHERE name = ?", [$columnName]);
+            }
 
             $data = [
                 'trina_crud_model_id' => $trinaCrudModel->id,

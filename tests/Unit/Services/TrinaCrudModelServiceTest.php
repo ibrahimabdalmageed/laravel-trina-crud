@@ -9,18 +9,21 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Schema;
 use Mockery;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
-use Trinavo\TrinaCrud\Contracts\TrinaCrudAuthorizationServiceInterface;
-use Trinavo\TrinaCrud\Services\TrinaCrudModelHelper;
-use Trinavo\TrinaCrud\Services\TrinaCrudModelService;
+use Trinavo\TrinaCrud\Contracts\AuthorizationServiceInterface;
+use Trinavo\TrinaCrud\Contracts\ModelServiceInterface;
+use Trinavo\TrinaCrud\Contracts\OwnershipServiceInterface;
+use Trinavo\TrinaCrud\Models\TrinaCrudColumn;
+use Trinavo\TrinaCrud\Models\TrinaCrudModel;
 
 class TrinaCrudModelServiceTest extends TestCase
 {
     use RefreshDatabase;
 
-    protected $authorizationService;
-    protected $modelHelper;
-    protected $trinaCrudModelService;
-    protected $testModelClass;
+    protected AuthorizationServiceInterface|Mockery\MockInterface $authorizationService;
+    protected ModelServiceInterface|Mockery\MockInterface $trinaCrudModelService;
+    protected OwnershipServiceInterface|Mockery\MockInterface $ownershipService;
+
+    protected Model $testModelClass;
 
     protected function setUp(): void
     {
@@ -35,34 +38,71 @@ class TrinaCrudModelServiceTest extends TestCase
         });
 
         // Mock the authorization service
-        $this->authorizationService = Mockery::mock(TrinaCrudAuthorizationServiceInterface::class);
+        $this->authorizationService = Mockery::mock(AuthorizationServiceInterface::class);
+        $this->trinaCrudModelService = app(ModelServiceInterface::class);
+        $this->ownershipService = Mockery::mock(OwnershipServiceInterface::class);
 
-        // Create the service with the mocked authorization service
-        $this->modelHelper = new class() extends TrinaCrudModelHelper {
-            // Override the method to avoid database lookup
-            public function findTrinaCrudModel(string $modelName): ?object
-            {
-                // This will be set in the test
-                return $this->testTrinaCrudModel ?? null;
-            }
+        $this->authorizationService->shouldReceive('hasPermissionTo')->andReturn(true);
 
-            // Property to hold the test model
-            public $testTrinaCrudModel;
-        };
+        $this->app->singleton(AuthorizationServiceInterface::class, function () {
+            return $this->authorizationService;
+        });
+        $this->app->singleton(ModelServiceInterface::class, function () {
+            return $this->trinaCrudModelService;
+        });
+        $this->app->singleton(OwnershipServiceInterface::class, function () {
+            return $this->ownershipService;
+        });
 
 
-        $this->trinaCrudModelService = new class($this->authorizationService, $this->modelHelper) extends TrinaCrudModelService {
-            // Property to hold the test model
-            public $testTrinaCrudModel;
-        };
         // Create a test model class
         $this->testModelClass = new class extends Model {
             protected $table = 'test_models';
             protected $fillable = ['name', 'description'];
         };
 
+
+        $trinaCrudModel = TrinaCrudModel::create([
+            'class_name' => 'test_model',
+            'model_name' => 'Test Model',
+            'model_short' => 'test_model',
+            'caption' => 'Test Model',
+            'multi_caption' => 'Test Model',
+            'page_size' => 20,
+            'public_model' => true,
+        ]);
+
+        //Artisan::call('trinacrud:sync-columns', ['model' => get_class($this->testModelClass)]);
+        TrinaCrudColumn::create([
+            'trina_crud_model_id' => $trinaCrudModel->id,
+            'column_name' => 'name',
+            'column_db_type' => 'string',
+            'column_user_type' => 'text',
+            'column_label' => 'Name',
+            'required' => true,
+            'default_value' => null,
+            'grid_order' => 1,
+            'edit_order' => 1,
+            'size' => 255,
+            'hide' => false,
+        ]);
+
+        TrinaCrudColumn::create([
+            'trina_crud_model_id' => $trinaCrudModel->id,
+            'column_name' => 'description',
+            'column_db_type' => 'text',
+            'column_user_type' => 'textarea',
+            'column_label' => 'Description',
+            'required' => false,
+            'default_value' => null,
+            'grid_order' => 2,
+            'edit_order' => 2,
+            'size' => null,
+            'hide' => false,
+        ]);
+
         // Register the model in the container
-        $this->app->bind(get_class($this->testModelClass), function () {
+        $this->app->bind('test_model', function () {
             return $this->testModelClass;
         });
     }
@@ -83,9 +123,6 @@ class TrinaCrudModelServiceTest extends TestCase
         // Create a mock TrinaCrudModel
         $trinaCrudModel = new \stdClass();
         $trinaCrudModel->class_name = get_class($this->testModelClass);
-
-        // Set the test model on the service
-        $this->modelHelper->testTrinaCrudModel = $trinaCrudModel;
 
         // Set up expectations for the authorization service
         $this->authorizationService->shouldReceive('scopeAuthorizedRecords')
@@ -146,9 +183,6 @@ class TrinaCrudModelServiceTest extends TestCase
         // Create a mock TrinaCrudModel
         $trinaCrudModel = new \stdClass();
         $trinaCrudModel->class_name = get_class($this->testModelClass);
-
-        // Set the test model on the service
-        $this->modelHelper->testTrinaCrudModel = $trinaCrudModel;
 
         // Set up expectations for the authorization service
         $this->authorizationService->shouldReceive('scopeAuthorizedRecords')
@@ -220,7 +254,7 @@ class TrinaCrudModelServiceTest extends TestCase
 
             public function relatedModels()
             {
-                return $this->hasMany(get_class(app()->make('related_model_class')), 'test_model_id');
+                return $this->hasMany(get_class($this->testModelClass), 'test_model_id');
             }
         };
 
@@ -229,14 +263,10 @@ class TrinaCrudModelServiceTest extends TestCase
             return $this->testModelClass;
         });
 
-        // Register the classes with specific keys for relationship resolution
-        $this->app->bind('test_model_class', function () {
-            return $this->testModelClass;
-        });
-
         $this->app->bind('related_model_class', function () use ($relatedModelClass) {
             return $relatedModelClass;
         });
+
 
         // Create some test records
         $model1 = $this->testModelClass::create(['name' => 'Test 1', 'description' => 'Description 1']);
@@ -247,36 +277,6 @@ class TrinaCrudModelServiceTest extends TestCase
         $relatedModelClass::create(['test_model_id' => $model1->id, 'title' => 'Related 2']);
         $relatedModelClass::create(['test_model_id' => $model2->id, 'title' => 'Related 3']);
 
-        // Create a mock TrinaCrudModel
-        $trinaCrudModel = new \stdClass();
-        $trinaCrudModel->class_name = get_class($this->testModelClass);
-
-        // Set the test model on the service
-        $this->modelHelper->testTrinaCrudModel = $trinaCrudModel;
-
-        // Set up expectations for the authorization service
-        $this->authorizationService->shouldReceive('scopeAuthorizedRecords')
-            ->once()
-            ->andReturnUsing(function ($query) {
-                return $query;
-            });
-
-        $this->authorizationService->shouldReceive('filterAuthorizedColumns')
-            ->once()
-            ->with('test_model', ['name', 'description'])
-            ->andReturn(['name', 'description']);
-
-        $this->authorizationService->shouldReceive('loadAuthorizedRelations')
-            ->once()
-            ->with(
-                Mockery::type('Illuminate\Database\Eloquent\Builder'),
-                'test_model',
-                ['relatedModels'],
-                ['relatedModels' => ['title']]
-            )
-            ->andReturnUsing(function ($query, $modelName, $relations, $relationColumns) {
-                return $query->with($relations);
-            });
 
         // Call the method with relations
         $result = $this->trinaCrudModelService->getModelRecords(

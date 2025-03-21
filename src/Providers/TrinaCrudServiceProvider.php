@@ -3,9 +3,14 @@
 namespace Trinavo\TrinaCrud\Providers;
 
 use Illuminate\Support\ServiceProvider;
-use Trinavo\TrinaCrud\Contracts\TrinaCrudAuthorizationServiceInterface;
-use Trinavo\TrinaCrud\Services\AllowAllAuthorizationService;
-use Trinavo\TrinaCrud\Services\SpatiePermissionAuthorizationService;
+use Trinavo\TrinaCrud\Contracts\AuthorizationServiceInterface;
+use Trinavo\TrinaCrud\Contracts\ModelServiceInterface;
+use Trinavo\TrinaCrud\Contracts\OwnershipServiceInterface;
+use Trinavo\TrinaCrud\Services\AuthorizationServices\AllowAllAuthorizationService;
+use Trinavo\TrinaCrud\Services\AuthorizationServices\SpatiePermissionAuthorizationService;
+use Trinavo\TrinaCrud\Services\ModelService;
+use Trinavo\TrinaCrud\Services\OwnershipServices\FieldOwnerService;
+use Trinavo\TrinaCrud\Services\OwnershipServices\OwnableService;
 
 class TrinaCrudServiceProvider extends ServiceProvider
 {
@@ -46,22 +51,41 @@ class TrinaCrudServiceProvider extends ServiceProvider
             return new \Trinavo\TrinaCrud\Services\Generators\DartModelGeneratorService();
         });
 
+        $this->app->singleton(ModelServiceInterface::class, ModelService::class);
+
         $this->registerAuthServiceProvider();
+        $this->registerOwnershipServiceProvider();
     }
 
 
     public function registerAuthServiceProvider()
     {
         // Get authorization type from config, default to 'default'
-        $authType = config('trina-crud.authorization_type', 'default');
+        $authService = config('trina-crud.authorization_service', 'default');
 
         // Bind the appropriate implementation based on the config
-        switch ($authType) {
+        switch ($authService) {
             case 'allow_all':
-                $this->app->bind(TrinaCrudAuthorizationServiceInterface::class, AllowAllAuthorizationService::class);
+                $this->app->singleton(AuthorizationServiceInterface::class, AllowAllAuthorizationService::class);
                 break;
             case 'spatie':
-                $this->app->bind(TrinaCrudAuthorizationServiceInterface::class, SpatiePermissionAuthorizationService::class);
+                $this->app->singleton(AuthorizationServiceInterface::class, SpatiePermissionAuthorizationService::class);
+                break;
+            default:
+                break;
+        }
+    }
+
+    public function registerOwnershipServiceProvider()
+    {
+        $ownershipService = config('trina-crud.ownership_service', 'ownable');
+
+        switch ($ownershipService) {
+            case 'ownable':
+                $this->app->singleton(OwnershipServiceInterface::class, OwnableService::class);
+                break;
+            case 'field':
+                $this->app->singleton(OwnershipServiceInterface::class, FieldOwnerService::class);
                 break;
             default:
                 break;

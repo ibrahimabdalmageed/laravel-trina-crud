@@ -67,10 +67,12 @@ class TrinaCrudModelController extends Controller
      * @param int $id
      * @return \Illuminate\Http\JsonResponse|\Illuminate\Database\Eloquent\Model
      */
-    public function show(Request $request, $id)
-    {
+    public function show(
+        String $model,
+        Request $request,
+        $id
+    ) {
         try {
-            $modelName = $request->model;
             $columns = $request->input('columns', []);
             $with = $request->has('with') ?
                 (is_array($request->with) ? $request->with : explode(',', $request->with)) :
@@ -78,7 +80,7 @@ class TrinaCrudModelController extends Controller
             $relationColumns = $request->input('relation_columns', []);
 
             return $this->modelService->getModelRecord(
-                $modelName,
+                $model,
                 $id,
                 $columns,
                 $with,
@@ -97,20 +99,20 @@ class TrinaCrudModelController extends Controller
      * @param ValidateTrinaCrudModelCreateRequest $request
      * @return \Illuminate\Http\JsonResponse|\Illuminate\Database\Eloquent\Model
      */
-    public function store(ValidateTrinaCrudModelCreateRequest $request)
-    {
+    public function store(
+        String $model,
+        ValidateTrinaCrudModelCreateRequest $request
+    ) {
         try {
-            $modelName = $request->model;
-
             // Check if user has permission to create this model
-            if (!$this->authService->hasModelPermission($modelName, 'create')) {
+            if (!$this->authService->hasModelPermission($model, 'create')) {
                 return response()->json(['error' => 'Unauthorized'], 403);
             }
 
             // Filter input data to exclude non-column fields
             $data = collect($request->all())->except(['model'])->toArray();
 
-            return $this->modelService->createModelRecord($modelName, $data);
+            return $this->modelService->createModelRecord($model, $data);
         } catch (\Symfony\Component\HttpKernel\Exception\NotFoundHttpException $e) {
             return response()->json(['error' => $e->getMessage()], 404);
         } catch (\Exception $e) {
@@ -125,20 +127,22 @@ class TrinaCrudModelController extends Controller
      * @param int $id
      * @return \Illuminate\Http\JsonResponse|\Illuminate\Database\Eloquent\Model
      */
-    public function update(Request $request, $id)
-    {
+    public function update(
+        String $model,
+        Request $request,
+        $id
+    ) {
         try {
-            $modelName = $request->model;
 
             // Check if user has permission to update this model
-            if (!$this->authService->hasModelPermission($modelName, 'update')) {
+            if (!$this->authService->hasModelPermission($model, 'update')) {
                 return response()->json(['error' => 'Unauthorized'], 403);
             }
 
             // Filter input data to exclude non-column fields
             $data = collect($request->all())->except(['model'])->toArray();
 
-            return $this->modelService->updateModelRecord($modelName, $id, $data);
+            return $this->modelService->updateModelRecord($model, $id, $data);
         } catch (\Symfony\Component\HttpKernel\Exception\NotFoundHttpException $e) {
             return response()->json(['error' => $e->getMessage()], 404);
         } catch (\Exception $e) {
@@ -153,17 +157,19 @@ class TrinaCrudModelController extends Controller
      * @param int $id
      * @return \Illuminate\Http\JsonResponse
      */
-    public function destroy(Request $request, $id)
-    {
+    public function destroy(
+        String $model,
+        Request $request,
+        $id
+    ) {
         try {
-            $modelName = $request->model;
 
             // Check if user has permission to delete this model
-            if (!$this->authService->hasModelPermission($modelName, 'delete')) {
+            if (!$this->authService->hasModelPermission($model, 'delete')) {
                 return response()->json(['error' => 'Unauthorized'], 403);
             }
 
-            $result = $this->modelService->deleteModelRecord($modelName, $id);
+            $result = $this->modelService->deleteModelRecord($model, $id);
 
             return response()->json(['success' => $result]);
         } catch (\Symfony\Component\HttpKernel\Exception\NotFoundHttpException $e) {

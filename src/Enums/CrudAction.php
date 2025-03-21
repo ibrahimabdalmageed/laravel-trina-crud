@@ -2,6 +2,8 @@
 
 namespace Trinavo\TrinaCrud\Enums;
 
+use Illuminate\Support\Str;
+
 enum CrudAction: string
 {
     case READ = 'read';
@@ -20,7 +22,7 @@ enum CrudAction: string
      */
     public function toAnyAction(): self
     {
-        return match($this) {
+        return match ($this) {
             self::READ => self::READ_ANY,
             self::CREATE => self::CREATE_ANY,
             self::UPDATE => self::UPDATE_ANY,
@@ -45,13 +47,27 @@ enum CrudAction: string
     }
 
     /**
-     * Convert the enum to a permission string for use with authorization systems
+     * Convert the enum to a model permission string for use with authorization systems
      *
      * @param string $modelName
      * @return string
      */
-    public function toPermissionString(string $modelName): string
+    public function toModelPermissionString(string $modelName): string
     {
-        return $this->value . '-' . \Illuminate\Support\Str::kebab($modelName);
+        return $this->value . '-' . Str::kebab($modelName);
+    }
+
+    /**
+     * Convert the enum to an attribute permission string for use with authorization systems
+     *
+     * @param string $modelName
+     * @param string $attribute
+     * @return string
+     */
+    public function toAttributePermissionString(string $modelName, string $attribute): string
+    {
+        return Str::kebab($modelName) . '_' .
+            Str::kebab($attribute) . '_' .
+            Str::kebab($this->value);
     }
 }

@@ -46,7 +46,8 @@ class SpatiePermissionAuthorizationService implements AuthorizationServiceInterf
      */
     public function isAttributeAuthorized(Model $model, string $attribute, CrudAction $action): bool
     {
-        $permissionName = Str::kebab(get_class($model)) . '_' . Str::kebab($attribute) . '_' . Str::kebab($action->value);
+        $modelName = get_class($model);
+        $permissionName = $action->toAttributePermissionString($modelName, $attribute);
         return $this->hasPermissionTo($permissionName);
     }
 
@@ -59,7 +60,7 @@ class SpatiePermissionAuthorizationService implements AuthorizationServiceInterf
      */
     public function hasModelPermission(string $modelName, CrudAction $action): bool
     {
-        $permissionName = Str::kebab($modelName) . '_' . Str::kebab($action->value);
+        $permissionName = $action->toModelPermissionString($modelName);
 
         // Check if user has the permission
         return $this->hasPermissionTo($permissionName);

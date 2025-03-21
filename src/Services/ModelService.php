@@ -304,7 +304,7 @@ class ModelService implements ModelServiceInterface
             $model = $this->getModel($model);
         }
 
-        return $model->getCrudFillable($action->value);
+        return $model->getCrudFillable($action);
     }
 
     /**
@@ -342,7 +342,7 @@ class ModelService implements ModelServiceInterface
             $model = $this->getModel($model);
         }
 
-        return $model->getCrudFillable($action->value);
+        return $model->getCrudFillable($action);
     }
 
     /**

@@ -6,10 +6,10 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Schema;
 use Trinavo\TrinaCrud\Tests\TestCase;
 use Trinavo\TrinaCrud\Models\TrinaCrudModel;
-use Trinavo\TrinaCrud\Services\TrinaCrudModelService;
 use Mockery;
 use Illuminate\Pagination\LengthAwarePaginator;
-use Trinavo\TrinaCrud\Contracts\TrinaCrudAuthorizationServiceInterface;
+use Trinavo\TrinaCrud\Contracts\ModelServiceInterface;
+use Trinavo\TrinaCrud\Tests\Unit\Services\TrinaCrudModelServiceTest;
 
 class TrinaCrudModelControllerFeatureTest extends TestCase
 {
@@ -56,10 +56,10 @@ class TrinaCrudModelControllerFeatureTest extends TestCase
         ]);
 
         // Create mocks for common services
-        $this->modelService = Mockery::mock(TrinaCrudModelService::class);
+        $this->modelService = Mockery::mock(ModelServiceInterface::class);
 
         // Bind the mock to the container
-        $this->app->instance(TrinaCrudModelService::class, $this->modelService);
+        $this->app->instance(TrinaCrudModelServiceTest::class, $this->modelService);
     }
 
     public function testDatabaseConnection()

@@ -50,16 +50,9 @@ class ModelService implements ModelServiceInterface
         array $filters = [],
         int $perPage = 15
     ): LengthAwarePaginator {
-        $user = $this->authorizationService->getUser();
 
-        if ($user) {
-            if (!$this->authorizationService->hasModelPermission($modelName, CrudAction::READ)) {
-                throw new NotFoundHttpException('You are not authorized to read this model');
-            }
-        } else {
-            if (!$this->authorizationService->hasModelPermission($modelName, CrudAction::READ_ANY)) {
-                throw new NotFoundHttpException('You are not authorized to read this model');
-            }
+        if (!$this->authorizationService->hasModelPermission($modelName, CrudAction::READ)) {
+            throw new NotFoundHttpException('You are not authorized to read this model');
         }
 
         // Find the model
@@ -113,16 +106,9 @@ class ModelService implements ModelServiceInterface
         ?array $with = null,
         array $relationAttributes = []
     ): Model {
-        $user = $this->authorizationService->getUser();
 
-        if ($user) {
-            if (!$this->authorizationService->hasModelPermission($modelName, CrudAction::READ)) {
-                throw new NotFoundHttpException('You are not authorized to read this model');
-            }
-        } else {
-            if (!$this->authorizationService->hasModelPermission($modelName, CrudAction::READ_ANY)) {
-                throw new NotFoundHttpException('You are not authorized to read this model');
-            }
+        if (!$this->authorizationService->hasModelPermission($modelName, CrudAction::READ)) {
+            throw new NotFoundHttpException('You are not authorized to read this model');
         }
 
         // Find the model
@@ -171,17 +157,10 @@ class ModelService implements ModelServiceInterface
      */
     public function create(string $modelName, array $data): Model
     {
-        $user = $this->authorizationService->getUser();
-
-        if ($user) {
-            if (!$this->authorizationService->hasModelPermission($modelName, CrudAction::CREATE)) {
-                throw new NotFoundHttpException('You are not authorized to create this model');
-            }
-        } else {
-            if (!$this->authorizationService->hasModelPermission($modelName, CrudAction::CREATE_ANY)) {
-                throw new NotFoundHttpException('You are not authorized to create this model');
-            }
+        if (!$this->authorizationService->hasModelPermission($modelName, CrudAction::CREATE)) {
+            throw new NotFoundHttpException('You are not authorized to create this model');
         }
+
 
         // Find the model
         $model = $this->getModel($modelName);
@@ -209,15 +188,11 @@ class ModelService implements ModelServiceInterface
     {
         $user = $this->authorizationService->getUser();
 
-        if ($user) {
-            if (!$this->authorizationService->hasModelPermission($modelName, CrudAction::UPDATE)) {
-                throw new NotFoundHttpException('You are not authorized to update this model');
-            }
-        } else {
-            if (!$this->authorizationService->hasModelPermission($modelName, CrudAction::UPDATE_ANY)) {
-                throw new NotFoundHttpException('You are not authorized to update this model');
-            }
+
+        if (!$this->authorizationService->hasModelPermission($modelName, CrudAction::UPDATE)) {
+            throw new NotFoundHttpException('You are not authorized to update this model');
         }
+
 
         // Find the model
         $model = $this->getModel($modelName);
@@ -255,16 +230,8 @@ class ModelService implements ModelServiceInterface
      */
     public function delete(string $modelName, int $id): bool
     {
-        $user = $this->authorizationService->getUser();
-
-        if ($user) {
-            if (!$this->authorizationService->hasModelPermission($modelName, CrudAction::DELETE)) {
-                throw new NotFoundHttpException('You are not authorized to delete this model');
-            }
-        } else {
-            if (!$this->authorizationService->hasModelPermission($modelName, CrudAction::DELETE_ANY)) {
-                throw new NotFoundHttpException('You are not authorized to delete this model');
-            }
+        if (!$this->authorizationService->hasModelPermission($modelName, CrudAction::DELETE)) {
+            throw new NotFoundHttpException('You are not authorized to delete this model');
         }
 
         // Find the model

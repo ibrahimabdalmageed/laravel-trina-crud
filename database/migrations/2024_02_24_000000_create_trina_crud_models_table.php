@@ -15,7 +15,6 @@ return new class extends Migration {
             $table->string('caption', 100)->nullable();
             $table->string('multi_caption', 100)->nullable();
             $table->integer('page_size')->default(20);
-            $table->boolean('public_model')->default(false);
             $table->string('order_by')->nullable();
             $table->timestamps();
         });

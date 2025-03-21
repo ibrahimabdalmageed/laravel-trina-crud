@@ -2,7 +2,7 @@
 
 namespace Trinavo\TrinaCrud\Services\AuthorizationServices;
 
-use Illuminate\Container\Attributes\Authenticated;
+use Illuminate\Database\Eloquent\Model;
 use Trinavo\TrinaCrud\Contracts\AuthorizationServiceInterface;
 
 class AllowAllAuthorizationService implements AuthorizationServiceInterface
@@ -13,7 +13,7 @@ class AllowAllAuthorizationService implements AuthorizationServiceInterface
         return true;
     }
 
-    public function getUser(): ?Authenticated
+    public function getUser(): ?Model
     {
         return null;
     }

@@ -4,6 +4,7 @@ namespace Trinavo\TrinaCrud\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
+use Trinavo\TrinaCrud\Contracts\ModelServiceInterface;
 use Trinavo\TrinaCrud\Http\Requests\ModelsController\ValidateTrinaCrudModelCreateRequest;
 use Trinavo\TrinaCrud\Http\Requests\ModelsController\ValidateTrinaCrudModelIndexRequest;
 use Trinavo\TrinaCrud\Services\TrinaCrudModelService;
@@ -11,17 +12,12 @@ use Trinavo\TrinaCrud\Services\TrinaCrudModelService;
 class TrinaCrudModelController extends Controller
 {
     /**
-     * @var TrinaCrudModelService
+     * @var ModelServiceInterface
      */
     protected $modelService;
 
-    /**
-     * @var TrinaCrudAuthorizationService
-     */
-    protected $authService;
-
     public function __construct(
-        TrinaCrudModelService $modelService,
+        ModelServiceInterface $modelService,
     ) {
         $this->modelService = $modelService;
     }
@@ -104,10 +100,6 @@ class TrinaCrudModelController extends Controller
         ValidateTrinaCrudModelCreateRequest $request
     ) {
         try {
-            // Check if user has permission to create this model
-            if (!$this->authService->hasModelPermission($model, 'create')) {
-                return response()->json(['error' => 'Unauthorized'], 403);
-            }
 
             // Filter input data to exclude non-column fields
             $data = collect($request->all())->except(['model'])->toArray();
@@ -134,11 +126,6 @@ class TrinaCrudModelController extends Controller
     ) {
         try {
 
-            // Check if user has permission to update this model
-            if (!$this->authService->hasModelPermission($model, 'update')) {
-                return response()->json(['error' => 'Unauthorized'], 403);
-            }
-
             // Filter input data to exclude non-column fields
             $data = collect($request->all())->except(['model'])->toArray();
 
@@ -164,10 +151,6 @@ class TrinaCrudModelController extends Controller
     ) {
         try {
 
-            // Check if user has permission to delete this model
-            if (!$this->authService->hasModelPermission($model, 'delete')) {
-                return response()->json(['error' => 'Unauthorized'], 403);
-            }
 
             $result = $this->modelService->deleteModelRecord($model, $id);
 

@@ -2,21 +2,21 @@
 
 namespace Trinavo\TrinaCrud\Tests\Feature\Http\Controllers;
 
+use Illuminate\Container\Attributes\Authenticated;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Schema;
 use Trinavo\TrinaCrud\Tests\TestCase;
 use Trinavo\TrinaCrud\Models\TrinaCrudModel;
 use Mockery;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Trinavo\TrinaCrud\Contracts\AuthorizationServiceInterface;
 use Trinavo\TrinaCrud\Contracts\ModelServiceInterface;
-use Trinavo\TrinaCrud\Tests\Unit\Services\TrinaCrudModelServiceTest;
 
 class TrinaCrudModelControllerFeatureTest extends TestCase
 {
     use RefreshDatabase;
 
     protected $authService;
-    protected $modelService;
 
     protected function setUp(): void
     {
@@ -34,13 +34,12 @@ class TrinaCrudModelControllerFeatureTest extends TestCase
 
         // Create a test model in the TrinaCrudModel table
         TrinaCrudModel::create([
-            'class_name' => 'TestUser',
+            'class_name' => TestUser::class,
             'caption' => 'Test User',
             'multi_caption' => 'Test Users',
             'model_name' => 'test_user',
             'model_short' => 'test_user',
             'page_size' => 10,
-            'public_model' => true,
             'order_by' => 'id'
         ]);
 
@@ -55,17 +54,29 @@ class TrinaCrudModelControllerFeatureTest extends TestCase
             'email' => 'jane@example.com',
         ]);
 
+        //run sync columns
+        $this->artisan('trinacrud:sync-columns', ['model' => TestUser::class]);
+
+        $this->app->bind(TestUser::class, function ($app) {
+            return new TestUser();
+        });
+
         // Create mocks for common services
-        $this->modelService = Mockery::mock(ModelServiceInterface::class);
+        $this->authService = Mockery::mock(AuthorizationServiceInterface::class);
+
+        $this->authService->shouldReceive('hasPermissionTo')->andReturn(true);
+        $this->authService->shouldReceive('getUser')->andReturn(null);
 
         // Bind the mock to the container
-        $this->app->instance(TrinaCrudModelServiceTest::class, $this->modelService);
+        $this->app->singleton(AuthorizationServiceInterface::class, function ($app) {
+            return $this->authService;
+        });
     }
 
     public function testDatabaseConnection()
     {
         // Verify that the TrinaCrudModel was created
-        $model = TrinaCrudModel::where('class_name', 'TestUser')->first();
+        $model = TrinaCrudModel::where('class_name', TestUser::class)->first();
         $this->assertNotNull($model);
         $this->assertEquals('Test User', $model->caption);
 
@@ -81,18 +92,8 @@ class TrinaCrudModelControllerFeatureTest extends TestCase
         // Get the test data
         $users = TestUser::all();
 
-        // Set up the mock to return our test data when getModelRecords is called
-        $this->modelService->shouldReceive('getModelRecords')
-            ->with('TestUser')
-            ->andReturn(new LengthAwarePaginator(
-                $users,
-                $users->count(),
-                15,
-                1
-            ));
-
         // Call the method
-        $result = $this->modelService->getModelRecords('TestUser');
+        $result = app(ModelServiceInterface::class)->getModelRecords(TestUser::class);
 
         // Assert the result is a paginator
         $this->assertInstanceOf(LengthAwarePaginator::class, $result);
@@ -111,14 +112,8 @@ class TrinaCrudModelControllerFeatureTest extends TestCase
     {
         // Get a test user
         $user = TestUser::first();
-
-        // Set up the mock to return our test data when getModelRecord is called
-        $this->modelService->shouldReceive('getModelRecord')
-            ->with('TestUser', $user->id)
-            ->andReturn($user);
-
         // Call the method
-        $result = $this->modelService->getModelRecord('TestUser', $user->id);
+        $result = app(ModelServiceInterface::class)->getModelRecord(TestUser::class, $user->id);
 
         // Assert the result is the expected model
         $this->assertEquals($user->id, $result->id);
@@ -134,17 +129,8 @@ class TrinaCrudModelControllerFeatureTest extends TestCase
             'email' => 'new@example.com',
         ];
 
-        // Create a new user
-        $newUser = new TestUser($data);
-        $newUser->id = 3;
-
-        // Set up the mock to return our test data when createModelRecord is called
-        $this->modelService->shouldReceive('createModelRecord')
-            ->with('TestUser', $data)
-            ->andReturn($newUser);
-
         // Call the method
-        $result = $this->modelService->createModelRecord('TestUser', $data);
+        $result = app(ModelServiceInterface::class)->createModelRecord(TestUser::class, $data);
 
         // Assert the result is the expected model
         $this->assertEquals(3, $result->id);
@@ -163,17 +149,8 @@ class TrinaCrudModelControllerFeatureTest extends TestCase
             'email' => 'updated@example.com',
         ];
 
-        // Create an updated user
-        $updatedUser = new TestUser($data);
-        $updatedUser->id = $user->id;
-
-        // Set up the mock to return our test data when updateModelRecord is called
-        $this->modelService->shouldReceive('updateModelRecord')
-            ->with('TestUser', $user->id, $data)
-            ->andReturn($updatedUser);
-
         // Call the method
-        $result = $this->modelService->updateModelRecord('TestUser', $user->id, $data);
+        $result = app(ModelServiceInterface::class)->updateModelRecord(TestUser::class, $user->id, $data);
 
         // Assert the result is the expected model
         $this->assertEquals($user->id, $result->id);
@@ -186,13 +163,8 @@ class TrinaCrudModelControllerFeatureTest extends TestCase
         // Get a test user
         $user = TestUser::first();
 
-        // Set up the mock to return true when deleteModelRecord is called
-        $this->modelService->shouldReceive('deleteModelRecord')
-            ->with('TestUser', $user->id)
-            ->andReturn(true);
-
         // Call the method
-        $result = $this->modelService->deleteModelRecord('TestUser', $user->id);
+        $result = app(ModelServiceInterface::class)->deleteModelRecord(TestUser::class, $user->id);
 
         // Assert the result is true
         $this->assertTrue($result);

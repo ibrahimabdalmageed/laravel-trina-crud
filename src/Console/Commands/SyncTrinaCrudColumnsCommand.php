@@ -33,25 +33,11 @@ class SyncTrinaCrudColumnsCommand extends Command
         $existingColumns = TrinaCrudColumn::where('trina_crud_model_id', $trinaCrudModel->id)->pluck('column_name')->toArray();
 
         foreach ($columns as $columnName) {
-            $columnInfo = SchemaHelper::getColumnInfo($table, $columnName);
-
-            if (!$columnInfo) {
-                $this->warn("⚠️ Could not retrieve column information for: {$columnName}");
-                continue;
-            }
 
             $data = [
                 'trina_crud_model_id' => $trinaCrudModel->id,
                 'column_name' => $columnName,
-                'column_db_type' => $columnInfo['type'],
-                'column_user_type' => null, // Can be set later
                 'column_label' => ucwords(str_replace('_', ' ', $columnName)),
-                'required' => $columnInfo['required'],
-                'default_value' => $columnInfo['default'],
-                'grid_order' => null,
-                'edit_order' => null,
-                'size' => $columnInfo['size'],
-                'hide' => false,
             ];
 
             TrinaCrudColumn::updateOrCreate(

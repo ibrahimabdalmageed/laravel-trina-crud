@@ -4,8 +4,8 @@ namespace Trinavo\TrinaCrud\Services;
 
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Pagination\LengthAwarePaginator;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Trinavo\TrinaCrud\Contracts\AuthorizationServiceInterface;
@@ -163,15 +163,14 @@ class ModelService implements ModelServiceInterface
         $modelClass = $trinaCrudModel->class_name;
 
         // Filter data based on permissions
-        $authorizedData = [];
+        $authorizedColumns = [];
         foreach ($data as $key => $value) {
             if ($this->hasColumnPermission($modelName, $key, 'create')) {
-                $authorizedData[$key] = $value;
+                $authorizedColumns[$key] = $value;
             }
         }
-
         // Create the record
-        return app($modelClass)->create($authorizedData);
+        return app($modelClass)->create($authorizedColumns);
     }
 
     /**
@@ -316,12 +315,6 @@ class ModelService implements ModelServiceInterface
      */
     public function hasColumnPermission(string $modelName, string $columnName, string $action): bool
     {
-        $user = Auth::user();
-
-        if (!$user) {
-            return false;
-        }
-
         // Convert camelCase to kebab-case for permission names
         $columnPermission = Str::kebab($action) . '-' . Str::kebab($modelName) . '-' . Str::kebab($columnName);
 
@@ -340,9 +333,9 @@ class ModelService implements ModelServiceInterface
      * @param string $modelName The name of the model
      * @return Builder
      */
-    public function scopeAuthorizedRecords(Builder $query, string $modelName): Builder
+    public function scopeAuthorizedRecords(Builder|Relation $query, string $modelName): Builder|Relation
     {
-        $user = Auth::user();
+        $user = $this->authorizationService->getUser();
 
         // Check if model uses Ownable trait
         $modelClass = $this->resolveModelClass($modelName);
@@ -370,7 +363,7 @@ class ModelService implements ModelServiceInterface
     public function filterAuthorizedColumns(string $modelName, ?array $requestedColumns = null): array
     {
         // Get all columns for the model
-        $trinaCrudModel = TrinaCrudModel::where('name', $modelName)->first();
+        $trinaCrudModel = $this->findTrinaCrudModel($modelName);
 
         if (!$trinaCrudModel) {
             return $requestedColumns ?? [];
@@ -394,10 +387,14 @@ class ModelService implements ModelServiceInterface
      * @param string $modelName The name of the model
      * @param array $relations The relations to load
      * @param array $columnsByRelation Optional columns to select for each relation
-     * @return Builder
+     * @return Builder|Relation
      */
-    public function loadAuthorizedRelations(Builder $query, string $modelName, array $relations, array $columnsByRelation = []): Builder
-    {
+    public function loadAuthorizedRelations(
+        Builder|Relation $query,
+        string $modelName,
+        array $relations,
+        array $columnsByRelation = []
+    ): Builder|Relation {
         foreach ($relations as $relation) {
             // Get the related model name
             $relatedModelName = $this->getRelatedModelName($modelName, $relation);
@@ -434,9 +431,9 @@ class ModelService implements ModelServiceInterface
      * @param Builder $query The query builder
      * @param string $modelName The name of the model
      * @param array $filters The filters to apply
-     * @return Builder
+     * @return Builder|Relation
      */
-    public function applyAuthorizedFilters(Builder $query, string $modelName, array $filters): Builder
+    public function applyAuthorizedFilters(Builder|Relation $query, string $modelName, array $filters): Builder|Relation
     {
         foreach ($filters as $column => $value) {
             // Skip if user doesn't have permission to filter by this column
@@ -515,7 +512,7 @@ class ModelService implements ModelServiceInterface
     protected function resolveModelClass(string $modelName): ?string
     {
         // Try to find the model in the TrinaCrudModel table
-        $trinaCrudModel = TrinaCrudModel::where('name', $modelName)->first();
+        $trinaCrudModel = $this->findTrinaCrudModel($modelName);
 
         if ($trinaCrudModel && !empty($trinaCrudModel->class_name)) {
             return $trinaCrudModel->class_name;

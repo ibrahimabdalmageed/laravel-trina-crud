@@ -20,13 +20,11 @@ class TrinaCrudModel extends Model
         'caption',
         'multi_caption',
         'page_size',
-        'public_model',
         'order_by',
     ];
 
     //cast
     protected $casts = [
-        'public_model' => 'boolean',
         'created_at' => 'timestamp',
         'updated_at' => 'timestamp',
     ];

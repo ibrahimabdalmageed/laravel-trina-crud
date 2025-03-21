@@ -4,6 +4,7 @@ namespace Trinavo\TrinaCrud\Contracts;
 
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Pagination\LengthAwarePaginator;
 
 interface ModelServiceInterface
@@ -77,11 +78,11 @@ interface ModelServiceInterface
     /**
      * Scope the query to only include authorized records
      * 
-     * @param Builder $query
+     * @param Builder|Relation $query
      * @param string $modelName
-     * @return Builder
+     * @return Builder|Relation
      */
-    public function scopeAuthorizedRecords(Builder $query, string $modelName): Builder;
+    public function scopeAuthorizedRecords(Builder|Relation $query, string $modelName): Builder|Relation;
 
     /**
      * Filter the columns to only include authorized columns
@@ -101,7 +102,12 @@ interface ModelServiceInterface
      * @param array $columnsByRelation
      * @return Builder
      */
-    public function loadAuthorizedRelations(Builder $query, string $modelName, array $relations, array $columnsByRelation = []): Builder;
+    public function loadAuthorizedRelations(
+        Builder|Relation $query,
+        string $modelName,
+        array $relations,
+        array $columnsByRelation = []
+    ): Builder|Relation;
 
     /**
      * Apply the authorized filters
@@ -111,7 +117,7 @@ interface ModelServiceInterface
      * @param array $filters
      * @return Builder
      */
-    public function applyAuthorizedFilters(Builder $query, string $modelName, array $filters): Builder;
+    public function applyAuthorizedFilters(Builder|Relation $query, string $modelName, array $filters): Builder|Relation;
 
     /**
      * Check if the model exists

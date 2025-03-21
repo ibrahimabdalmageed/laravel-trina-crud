@@ -2,7 +2,7 @@
 
 namespace Trinavo\TrinaCrud\Contracts;
 
-use Illuminate\Container\Attributes\Authenticated;
+use Illuminate\Database\Eloquent\Model;
 
 interface AuthorizationServiceInterface
 {
@@ -15,5 +15,5 @@ interface AuthorizationServiceInterface
     public function hasPermissionTo(string $permissionName): bool;
 
 
-    public function getUser(): ?Authenticated;
+    public function getUser(): ?Model;
 }

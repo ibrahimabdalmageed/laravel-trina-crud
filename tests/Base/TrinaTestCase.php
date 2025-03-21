@@ -17,6 +17,8 @@ class TrinaTestCase extends TestCase
     {
         $this->authService = Mockery::mock(AuthorizationServiceInterface::class);
         $this->authService->shouldReceive('hasPermissionTo')->andReturn(true);
+        $this->authService->shouldReceive('hasModelPermission')->andReturn(true);
+        $this->authService->shouldReceive('isAttributeAuthorized')->andReturn(true);
         $this->authService->shouldReceive('getUser')->andReturn(null);
 
 

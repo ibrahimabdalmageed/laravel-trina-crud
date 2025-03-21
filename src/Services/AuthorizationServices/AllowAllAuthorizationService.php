@@ -13,8 +13,18 @@ class AllowAllAuthorizationService implements AuthorizationServiceInterface
         return true;
     }
 
+    public function hasModelPermission(string $modelName, string $action): bool
+    {
+        return true;
+    }
+
     public function getUser(): ?Model
     {
         return null;
+    }
+
+    public function isAttributeAuthorized(Model $model, string $attribute, string $action): bool
+    {
+        return true;
     }
 }

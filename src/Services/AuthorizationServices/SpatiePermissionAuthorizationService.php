@@ -4,6 +4,7 @@ namespace Trinavo\TrinaCrud\Services\AuthorizationServices;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 use Trinavo\TrinaCrud\Contracts\AuthorizationServiceInterface;
 
 class SpatiePermissionAuthorizationService implements AuthorizationServiceInterface
@@ -16,18 +17,26 @@ class SpatiePermissionAuthorizationService implements AuthorizationServiceInterf
      */
     public function hasPermissionTo(string $permissionName): bool
     {
-        $user = Auth::user();
+        $user = $this->getUser();
         if (!$user) {
             return false;
         }
 
-        // Check if the user model has the hasPermissionTo method from Spatie's package
-        if (method_exists($user, 'hasPermissionTo')) {
-            return $user->hasPermissionTo($permissionName);
-        }
+        return $user->hasPermissionTo($permissionName);
+    }
 
-        // Fallback if Spatie's package is not properly installed
-        return false;
+    public function isAttributeAuthorized(Model $model, string $attribute, string $action): bool
+    {
+        $permissionName = Str::kebab(get_class($model)) . '_' . Str::kebab($attribute) . '_' . Str::kebab($action);
+        return $this->hasPermissionTo($permissionName);
+    }
+
+    public function hasModelPermission(string $modelName, string $action): bool
+    {
+        $permissionName = Str::kebab($modelName) . '_' . Str::kebab($action);
+
+        // Check if user has the permission
+        return $this->hasPermissionTo($permissionName);
     }
 
 

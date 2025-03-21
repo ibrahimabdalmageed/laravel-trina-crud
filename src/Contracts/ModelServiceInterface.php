@@ -77,16 +77,6 @@ interface ModelServiceInterface
      */
     public function delete(string $modelName, int $id): bool;
 
-
-    /**
-     * Check if the user has permission to perform an action on a model
-     * 
-     * @param string $modelName
-     * @param string $action
-     * @return bool
-     */
-    public function hasModelPermission(string $modelName, string $action): bool;
-
     /**
      * Get the authorized attributes for a model
      * 
@@ -172,4 +162,15 @@ interface ModelServiceInterface
      * @return ModelSchema|null
      */
     public function parseModelFile(string $file, ?string $namespace = null): ?ModelSchema;
+
+
+    /**
+     * Filter columns based on user permissions
+     * 
+     * @param string|Model $model
+     * @param string $action
+     * @param array|null $requestedAttributes
+     * @return array
+     */
+    public function filterAuthorizedAttributes(string|Model $model, string $action, ?array $requestedAttributes = null): array;
 }

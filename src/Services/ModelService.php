@@ -7,7 +7,6 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\App;
-use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
 use ReflectionClass;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -55,11 +54,11 @@ class ModelService implements ModelServiceInterface
         $user = $this->authorizationService->getUser();
 
         if ($user) {
-            if (!$this->hasModelPermission($modelName, 'read')) {
+            if (!$this->authorizationService->hasModelPermission($modelName, 'read')) {
                 throw new NotFoundHttpException('You are not authorized to read this model');
             }
         } else {
-            if (!$this->hasModelPermission($modelName, 'read_any')) {
+            if (!$this->authorizationService->hasModelPermission($modelName, 'read_any')) {
                 throw new NotFoundHttpException('You are not authorized to read this model');
             }
         }
@@ -78,7 +77,7 @@ class ModelService implements ModelServiceInterface
         $query = $this->scopeAuthorizedRecords($query, $model, 'read');
 
         // Filter columns based on permissions
-        $authorizedAttributes  = $this->filterAuthorizedAttributes($model, $attributes);
+        $authorizedAttributes  = $this->filterAuthorizedAttributes($model, 'read', $attributes);
 
         // Select only authorized columns if specified
         if (!empty($authorizedAttributes)) {
@@ -121,11 +120,11 @@ class ModelService implements ModelServiceInterface
         $user = $this->authorizationService->getUser();
 
         if ($user) {
-            if (!$this->hasModelPermission($modelName, 'read')) {
+            if (!$this->authorizationService->hasModelPermission($modelName, 'read')) {
                 throw new NotFoundHttpException('You are not authorized to read this model');
             }
         } else {
-            if (!$this->hasModelPermission($modelName, 'read_any')) {
+            if (!$this->authorizationService->hasModelPermission($modelName, 'read_any')) {
                 throw new NotFoundHttpException('You are not authorized to read this model');
             }
         }
@@ -145,7 +144,7 @@ class ModelService implements ModelServiceInterface
         $query = $this->scopeAuthorizedRecords($query, $model, 'read');
 
         // Filter columns based on permissions
-        $authorizedAttributes  = $this->filterAuthorizedAttributes($model, $attributes);
+        $authorizedAttributes  = $this->filterAuthorizedAttributes($model, 'read', $attributes);
 
         // Select only authorized columns if specified
         if (!empty($authorizedAttributes)) {
@@ -180,11 +179,11 @@ class ModelService implements ModelServiceInterface
         $user = $this->authorizationService->getUser();
 
         if ($user) {
-            if (!$this->hasModelPermission($modelName, 'create')) {
+            if (!$this->authorizationService->hasModelPermission($modelName, 'create')) {
                 throw new NotFoundHttpException('You are not authorized to create this model');
             }
         } else {
-            if (!$this->hasModelPermission($modelName, 'create_any')) {
+            if (!$this->authorizationService->hasModelPermission($modelName, 'create_any')) {
                 throw new NotFoundHttpException('You are not authorized to create this model');
             }
         }
@@ -215,11 +214,11 @@ class ModelService implements ModelServiceInterface
         $user = $this->authorizationService->getUser();
 
         if ($user) {
-            if (!$this->hasModelPermission($modelName, 'update')) {
+            if (!$this->authorizationService->hasModelPermission($modelName, 'update')) {
                 throw new NotFoundHttpException('You are not authorized to update this model');
             }
         } else {
-            if (!$this->hasModelPermission($modelName, 'update_any')) {
+            if (!$this->authorizationService->hasModelPermission($modelName, 'update_any')) {
                 throw new NotFoundHttpException('You are not authorized to update this model');
             }
         }
@@ -263,11 +262,11 @@ class ModelService implements ModelServiceInterface
         $user = $this->authorizationService->getUser();
 
         if ($user) {
-            if (!$this->hasModelPermission($modelName, 'delete')) {
+            if (!$this->authorizationService->hasModelPermission($modelName, 'delete')) {
                 throw new NotFoundHttpException('You are not authorized to delete this model');
             }
         } else {
-            if (!$this->hasModelPermission($modelName, 'delete_any')) {
+            if (!$this->authorizationService->hasModelPermission($modelName, 'delete_any')) {
                 throw new NotFoundHttpException('You are not authorized to delete this model');
             }
         }
@@ -297,27 +296,6 @@ class ModelService implements ModelServiceInterface
     }
 
 
-    /**
-     * Check if the user has permission to access a model
-     *
-     * @param string $modelName The name of the model
-     * @param string $action The action (view, create, update, delete)
-     * @return bool
-     */
-    public function hasModelPermission(string $modelName, string $action): bool
-    {
-        $user = $this->authorizationService->getUser();
-
-        if (!$user) {
-            $action = $action . '_any';
-        }
-
-        // Convert camelCase to kebab-case for permission names
-        $permissionName = Str::kebab($action) . '-' . Str::kebab($modelName);
-
-        // Check if user has the permission
-        return $this->authorizationService->hasPermissionTo($permissionName);
-    }
 
     /**
      * Get the authorized attributes for a model
@@ -326,13 +304,13 @@ class ModelService implements ModelServiceInterface
      * @param string $action The action (view, update)
      * @return array
      */
-    public function getAuthorizedAttributes(string|Model $model, string $action): array
+    public function getAuthorizedAttributes(string|Model|HasCrud $model, string $action): array
     {
         if (is_string($model)) {
             $model = $this->getModel($model);
         }
 
-        return $model->getFillable();
+        return $model->getCrudFillable($action);
     }
 
     /**
@@ -364,17 +342,18 @@ class ModelService implements ModelServiceInterface
     /**
      * Filter columns based on user permissions
      *
-     * @param string $modelName The name of the model
-     * @param array|null $requestedColumns The columns requested by the user
+     * @param string|Model $model
+     * @param string $action
+     * @param array|null $requestedAttributes
      * @return array
      */
-    public function filterAuthorizedAttributes(string|Model $model, ?array $requestedColumns = null): array
+    public function filterAuthorizedAttributes(string|Model $model, string $action, ?array $requestedAttributes = null): array
     {
         if (is_string($model)) {
             $model = $this->getModel($model);
         }
 
-        return $model->getFillable();
+        return $model->getCrudFillable($action);
     }
 
     /**
@@ -404,13 +383,13 @@ class ModelService implements ModelServiceInterface
             $relatedModel = $this->getRelatedModel($model, $relation);
 
             // Check if user has permission to view the related model
-            if (!$this->hasModelPermission($relatedModel, $action)) {
+            if (!$this->authorizationService->hasModelPermission($relatedModel, $action)) {
                 continue;
             }
 
             // Get authorized columns for the relation
             $attributes = $attributesByRelation[$relation] ?? null;
-            $authorizedAttributes  = $this->filterAuthorizedAttributes($relatedModel, $attributes);
+            $authorizedAttributes  = $this->filterAuthorizedAttributes($relatedModel, $action, $attributes);
 
             // Load relation with ownership scope and column restrictions
             $query->with([$relation => function ($q) use ($relatedModel, $authorizedAttributes, $action) {

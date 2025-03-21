@@ -5,6 +5,7 @@ namespace Trinavo\TrinaCrud\Http\Requests\ModelsController;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Trinavo\TrinaCrud\Contracts\ModelServiceInterface;
+use Trinavo\TrinaCrud\Contracts\AuthorizationServiceInterface;
 
 class ModelRequestValidator extends FormRequest
 {
@@ -18,17 +19,24 @@ class ModelRequestValidator extends FormRequest
      */
     protected $modelService;
 
+    /**
+     * @var AuthorizationServiceInterface
+     */
+    protected $authorizationService;
+
     protected $action;
 
     public function authorize(): bool
     {
-        return $this->modelService->hasModelPermission($this->model ?? '', $this->action);
+        return $this->authorizationService->hasModelPermission($this->model ?? '', $this->action);
     }
 
     public function __construct(
         ModelServiceInterface $modelService,
+        AuthorizationServiceInterface $authorizationService
     ) {
         $this->modelService = $modelService;
+        $this->authorizationService = $authorizationService;
     }
 
 
@@ -48,7 +56,7 @@ class ModelRequestValidator extends FormRequest
 
     private function validateModelParameter()
     {
-        if (!$this->modelService->getModel($this->model)) {
+        if (!$this->modelService->verifyModel($this->model)) {
             throw new HttpResponseException(
                 response()->json([
                     'message' => 'Invalid model',

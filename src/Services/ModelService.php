@@ -421,7 +421,7 @@ class ModelService implements ModelServiceInterface
             return $query;
         }
 
-        $fillables = $modelInstance->getFillable();
+        $fillables = $modelInstance->getCrudFillable($action);
 
         foreach ($filters as $attribute => $value) {
             // Check if this is a relationship filter (contains a dot)
@@ -630,7 +630,7 @@ class ModelService implements ModelServiceInterface
 
         // Get the model instance to extract fillable attributes
         $model = $this->getModel($fullClassName);
-        $fillables = $model ? $model->getFillable() : [];
+        $fillables = $model ? $model->getCrudFillable(CrudAction::READ) : [];
 
         return new ModelSchema($fullClassName, $fillables);
     }

@@ -32,7 +32,7 @@ class SpatiePermissionAuthorizationService implements AuthorizationServiceInterf
         if (!$user) {
             return false;
         }
-        
+
         return $user->hasPermissionTo($permissionName);
     }
 

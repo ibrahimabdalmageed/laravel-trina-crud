@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Trinavo\TrinaCrud\Models\ModelSchema;
 
 interface ModelServiceInterface
 {
@@ -89,7 +90,7 @@ interface ModelServiceInterface
     /**
      * Get the authorized attributes for a model
      * 
-     * @param string $modelName
+     * @param string|Model $modelName
      * @param string $action
      * @return array
      */
@@ -156,5 +157,19 @@ interface ModelServiceInterface
     public function verifyModel(string $modelClass): bool;
 
 
+    /**
+     * Get the schema of all models
+     * 
+     * @return array
+     */
     public function getSchema(): array;
+
+    /**
+     * Parse a model file to extract model information
+     * 
+     * @param string $file The path to the model file
+     * @param string|null $namespace The namespace of the model
+     * @return ModelSchema|null
+     */
+    public function parseModelFile(string $file, ?string $namespace = null): ?ModelSchema;
 }

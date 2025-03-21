@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\App;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
 use ReflectionClass;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -14,6 +15,7 @@ use Trinavo\TrinaCrud\Contracts\AuthorizationServiceInterface;
 use Trinavo\TrinaCrud\Contracts\ModelServiceInterface;
 use Trinavo\TrinaCrud\Contracts\OwnershipServiceInterface;
 use Trinavo\TrinaCrud\Traits\HasCrud;
+use Trinavo\TrinaCrud\Models\ModelSchema;
 
 class ModelService implements ModelServiceInterface
 {
@@ -607,38 +609,61 @@ class ModelService implements ModelServiceInterface
         return $this->getModel($relatedModelName);
     }
 
-
+    /**
+     * Get the schema of all models
+     *
+     * @return array
+     */
     public function getSchema(): array
     {
         //scan all model paths from config model_paths
         $models = [];
         foreach (config('trina-crud.model_paths') as $path) {
             $namespace = null;
-            $files = array_merge($models, glob($path . '/*.php'));
+            $files = glob($path . '/*.php');
             foreach ($files as $file) {
-                //get the class name from the file name
-                $className = str_replace('.php', '', $file);
-                $className = str_replace($path . '/', '', $className);
-
-                if (!$namespace) {
-                    $lines = file($file, 10);
-                    foreach ($lines as $line) {
-                        if (preg_match('/namespace\s+([\\a-zA-Z0-9_]+);/', $line, $matches)) {
-                            $namespace = $matches[1];
-                            break;
-                        }
-                    }
+                $modelSchema = $this->parseModelFile($file, $namespace);
+                if ($modelSchema) {
+                    $models[] = $modelSchema;
                 }
-
-                $fullClassName = $namespace . '\\' . $className;
-
-                if (!$this->verifyModel($fullClassName)) {
-                    continue;
-                }
-
-                $models[] = $fullClassName;
             }
         }
         return $models;
+    }
+
+    /**
+     * Parse a model file to extract model information
+     * 
+     * @param string $file The path to the model file
+     * @param string|null $namespace The namespace of the model
+     * @return ModelSchema|null
+     */
+    public function parseModelFile(string $file, ?string $namespace = null): ?ModelSchema
+    {
+        //get the class name from the file name
+        $className = str_replace('.php', '', $file);
+        $className = str_replace(dirname($file) . '/', '', $className);
+
+        if (!$namespace) {
+            $lines = file($file, 10);
+            foreach ($lines as $line) {
+                if (preg_match('/namespace\s+([\\a-zA-Z0-9_]+);/', $line, $matches)) {
+                    $namespace = $matches[1];
+                    break;
+                }
+            }
+        }
+
+        $fullClassName = $namespace . '\\' . $className;
+
+        if (!$this->verifyModel($fullClassName)) {
+            return null;
+        }
+
+        // Get the model instance to extract fillable attributes
+        $model = $this->getModel($fullClassName);
+        $fillables = $model ? $model->getFillable() : [];
+
+        return new ModelSchema($fullClassName, $fillables);
     }
 }

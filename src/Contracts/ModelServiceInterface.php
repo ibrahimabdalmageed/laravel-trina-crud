@@ -144,7 +144,7 @@ interface ModelServiceInterface
     /**
      * Verify if the model is a valid Crud model for security purposes
      * 
-     * @param string $modelClass
+     * @param string $modelClass The model class to verify, you can use . instead of \ for namespace
      * @return bool
      */
     public function verifyModel(string $modelClass): bool;

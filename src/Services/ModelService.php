@@ -528,6 +528,8 @@ class ModelService implements ModelServiceInterface
     public function verifyModel(string $modelClass): bool
     {
 
+        $modelClass = str_replace('.', '\\', $modelClass);
+
         if (App::bound($modelClass)) {
             $instance = App::make($modelClass);
             $reflection = new ReflectionClass($instance);
@@ -556,6 +558,8 @@ class ModelService implements ModelServiceInterface
     {
         $modelClass = is_string($model) ? $model : get_class($model);
 
+        $modelClass = str_replace('.', '\\', $modelClass);
+
         if (!$this->verifyModel($modelClass)) {
             return null;
         }
@@ -563,6 +567,7 @@ class ModelService implements ModelServiceInterface
         if (is_string($model)) {
             $model = app($modelClass);
         }
+
 
         return $model;
     }

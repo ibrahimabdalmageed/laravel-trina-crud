@@ -32,7 +32,7 @@ class ModelRequestValidator extends FormRequest
 
     public function authorize(): bool
     {
-        return $this->authorizationService->hasModelPermission($this->model ?? '', $this->action);
+        return $this->authorizationService->hasModelPermission($this->model, $this->action);
     }
 
     public function __construct(

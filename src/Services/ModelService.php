@@ -406,7 +406,7 @@ class ModelService implements ModelServiceInterface
             }
 
             // Get authorized columns for the relation
-            $attributes = $columnsByRelation[$relation] ?? null;
+            $attributes = $attributesByRelation[$relation] ?? null;
             $authorizedAttributes  = $this->filterAuthorizedAttributes($relatedModel, $attributes);
 
             // Load relation with ownership scope and column restrictions
@@ -429,49 +429,67 @@ class ModelService implements ModelServiceInterface
     /**
      * Apply filters to a query with permission checks
      *
-     * @param Builder $query The query builder
-     * @param string $modelName The name of the model
+     * @param Builder|Relation $query The query builder
+     * @param string|Model $model The model
      * @param array $filters The filters to apply
+     * @param string $action The action (view, update)
      * @return Builder|Relation
      */
     public function applyAuthorizedFilters(
         Builder|Relation $query,
         string|Model $model,
         array $filters,
-        string $action
+        string $action = 'read'
     ): Builder|Relation {
-        $fillables = $this->getAuthorizedAttributes($model, $action);
-        $relationsFillables = [];
-        $relationMap = [];
-        foreach ($filters as $attribute => $value) {
-            if (str_contains($attribute, '.')) {
-                $relationName = explode('.', $attribute)[0];
-                if (!isset($relationsFillables[$relationName])) {
-                    $relatedModel = $this->getRelatedModel($model, $relationName);
-                    $relationMap[$relationName] = $relatedModel;
-                    if (!$relatedModel) {
-                        continue;
-                    }
-                    $relationsFillables[$relationName] = $this->getAuthorizedAttributes($relatedModel, $action);
-                }
-            }
+        if (empty($filters)) {
+            return $query;
         }
 
+        $modelInstance = is_string($model) ? $this->getModel($model) : $model;
+        if (!$modelInstance) {
+            return $query;
+        }
+
+        $fillables = $modelInstance->getFillable();
+
         foreach ($filters as $attribute => $value) {
+            // Check if this is a relationship filter (contains a dot)
             if (str_contains($attribute, '.')) {
-                $relationName = explode('.', $attribute)[0];
-                $attributeWithRelation = explode('.', $attribute)[1];
-                $relatedModel = $relationMap[$relationName];
-                if (!$relatedModel) {
+                list($relation, $relationAttribute) = explode('.', $attribute, 2);
+                
+                // Check if the relation exists on the model
+                if (!method_exists($modelInstance, $relation)) {
                     continue;
                 }
-                if (!in_array($attributeWithRelation, $relationsFillables[$relationName])) {
-                    continue;
+                
+                // Handle relationship filtering
+                if (is_array($value) && isset($value['operator'])) {
+                    $operator = $value['operator'];
+                    $filterValue = $value['value'] ?? null;
+                    
+                    $query->whereHas($relation, function ($subQuery) use ($relationAttribute, $operator, $filterValue) {
+                        if ($operator === 'like') {
+                            $subQuery->where($relationAttribute, 'like', "%{$filterValue}%");
+                        } else {
+                            $this->applyOperatorFilter($subQuery, $relationAttribute, [
+                                'operator' => $operator,
+                                'value' => $filterValue
+                            ]);
+                        }
+                    });
+                } else {
+                    // Simple equality filter on relationship
+                    $query->whereHas($relation, function ($subQuery) use ($relationAttribute, $value) {
+                        $subQuery->where($relationAttribute, $value);
+                    });
                 }
-            } else {
-                if (!in_array($attribute, $fillables)) {
-                    continue;
-                }
+                
+                continue;
+            }
+            
+            // Regular attribute filtering (non-relationship)
+            if (!in_array($attribute, $fillables)) {
+                continue;
             }
 
             // Handle different filter types
@@ -538,17 +556,34 @@ class ModelService implements ModelServiceInterface
 
     public function getModel(string|Model $modelClass): ?Model
     {
-        $model = app($modelClass);
-        if (!$model) {
+        // If already a model instance, return it directly
+        if ($modelClass instanceof Model) {
+            if (in_array(HasCrud::class, class_uses_recursive($modelClass))) {
+                return $modelClass;
+            }
             return null;
         }
-        if (!is_subclass_of($model, Model::class)) {
+        
+        // Handle string class names
+        try {
+            $model = app($modelClass);
+            
+            if (!$model || !is_object($model)) {
+                return null;
+            }
+            
+            if (!$model instanceof Model) {
+                return null;
+            }
+            
+            if (!in_array(HasCrud::class, class_uses_recursive($model))) {
+                return null;
+            }
+            
+            return $model;
+        } catch (\Throwable $e) {
             return null;
         }
-        if (!in_array(HasCrud::class, class_uses_recursive($model))) {
-            return null;
-        }
-        return $model;
     }
 
     public function getRelatedModel(string|Model $model, string $relation): ?Model

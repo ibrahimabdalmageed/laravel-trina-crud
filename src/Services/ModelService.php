@@ -564,12 +564,17 @@ class ModelService implements ModelServiceInterface
             $modelClass = $reflection->getName();
         }
 
+        // Check if the class exists
+        if (!class_exists($modelClass)) {
+            return false;
+        }
+
         // Check if the model has the HasCrud trait before creating it
         if (!in_array(HasCrud::class, class_uses_recursive($modelClass))) {
             return false;
         }
 
-        //check if modelClass is instance of Model without creating it
+        // Check if modelClass is instance of Model without creating it
         if (!is_subclass_of($modelClass, Model::class)) {
             return false;
         }

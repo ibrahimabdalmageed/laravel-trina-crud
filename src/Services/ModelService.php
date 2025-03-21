@@ -4,10 +4,11 @@ namespace Trinavo\TrinaCrud\Services;
 
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\App;
 use Illuminate\Support\Str;
+use ReflectionClass;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Trinavo\TrinaCrud\Contracts\AuthorizationServiceInterface;
 use Trinavo\TrinaCrud\Contracts\ModelServiceInterface;
@@ -456,17 +457,17 @@ class ModelService implements ModelServiceInterface
             // Check if this is a relationship filter (contains a dot)
             if (str_contains($attribute, '.')) {
                 list($relation, $relationAttribute) = explode('.', $attribute, 2);
-                
+
                 // Check if the relation exists on the model
                 if (!method_exists($modelInstance, $relation)) {
                     continue;
                 }
-                
+
                 // Handle relationship filtering
                 if (is_array($value) && isset($value['operator'])) {
                     $operator = $value['operator'];
                     $filterValue = $value['value'] ?? null;
-                    
+
                     $query->whereHas($relation, function ($subQuery) use ($relationAttribute, $operator, $filterValue) {
                         if ($operator === 'like') {
                             $subQuery->where($relationAttribute, 'like', "%{$filterValue}%");
@@ -483,10 +484,10 @@ class ModelService implements ModelServiceInterface
                         $subQuery->where($relationAttribute, $value);
                     });
                 }
-                
+
                 continue;
             }
-            
+
             // Regular attribute filtering (non-relationship)
             if (!in_array($attribute, $fillables)) {
                 continue;
@@ -554,43 +555,46 @@ class ModelService implements ModelServiceInterface
         return $query;
     }
 
-    public function getModel(string|Model $modelClass): ?Model
+    public function verifyModel(string $modelClass): bool
     {
-        // If already a model instance, return it directly
-        if ($modelClass instanceof Model) {
-            if (in_array(HasCrud::class, class_uses_recursive($modelClass))) {
-                return $modelClass;
-            }
+
+        if (App::bound($modelClass)) {
+            $instance = App::make($modelClass);
+            $reflection = new ReflectionClass($instance);
+            $modelClass = $reflection->getName();
+        }
+
+        // Check if the model has the HasCrud trait before creating it
+        if (!in_array(HasCrud::class, class_uses_recursive($modelClass))) {
+            return false;
+        }
+
+        //check if modelClass is instance of Model without creating it
+        if (!is_subclass_of($modelClass, Model::class)) {
+            return false;
+        }
+
+        return true;
+    }
+
+    public function getModel(string|Model $model): ?Model
+    {
+        $modelClass = is_string($model) ? $model : get_class($model);
+
+        if (!$this->verifyModel($modelClass)) {
             return null;
         }
-        
-        // Handle string class names
-        try {
+
+        if (is_string($model)) {
             $model = app($modelClass);
-            
-            if (!$model || !is_object($model)) {
-                return null;
-            }
-            
-            if (!$model instanceof Model) {
-                return null;
-            }
-            
-            if (!in_array(HasCrud::class, class_uses_recursive($model))) {
-                return null;
-            }
-            
-            return $model;
-        } catch (\Throwable $e) {
-            return null;
         }
+
+        return $model;
     }
 
     public function getRelatedModel(string|Model $model, string $relation): ?Model
     {
-        if (is_string($model)) {
-            $model = $this->getModel($model);
-        }
+        $model = $this->getModel($model);
         if (!$model) {
             return null;
         }

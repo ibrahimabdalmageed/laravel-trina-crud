@@ -137,6 +137,7 @@ interface ModelServiceInterface
         string $action
     ): Builder|Relation;
 
+
     /**
      * Get the model
      * 
@@ -144,4 +145,13 @@ interface ModelServiceInterface
      * @return ?Model
      */
     public function getModel(string|Model $modelName): ?Model;
+
+
+    /**
+     * Verify if the model is a valid Crud model for security purposes
+     * 
+     * @param string $modelClass
+     * @return bool
+     */
+    public function verifyModel(string $modelClass): bool;
 }

@@ -608,5 +608,37 @@ class ModelService implements ModelServiceInterface
     }
 
 
-    public function getSchema(string|Model $model): array {}
+    public function getSchema(): array
+    {
+        //scan all model paths from config model_paths
+        $models = [];
+        foreach (config('trina-crud.model_paths') as $path) {
+            $namespace = null;
+            $files = array_merge($models, glob($path . '/*.php'));
+            foreach ($files as $file) {
+                //get the class name from the file name
+                $className = str_replace('.php', '', $file);
+                $className = str_replace($path . '/', '', $className);
+
+                if (!$namespace) {
+                    $lines = file($file, 10);
+                    foreach ($lines as $line) {
+                        if (preg_match('/namespace\s+([\\a-zA-Z0-9_]+);/', $line, $matches)) {
+                            $namespace = $matches[1];
+                            break;
+                        }
+                    }
+                }
+
+                $fullClassName = $namespace . '\\' . $className;
+
+                if (!$this->verifyModel($fullClassName)) {
+                    continue;
+                }
+
+                $models[] = $fullClassName;
+            }
+        }
+        return $models;
+    }
 }

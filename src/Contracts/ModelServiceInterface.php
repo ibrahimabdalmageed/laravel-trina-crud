@@ -156,5 +156,5 @@ interface ModelServiceInterface
     public function verifyModel(string $modelClass): bool;
 
 
-    public function getSchema(string|Model $model): array;
+    public function getSchema(): array;
 }

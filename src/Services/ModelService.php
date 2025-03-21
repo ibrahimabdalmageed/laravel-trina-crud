@@ -606,4 +606,7 @@ class ModelService implements ModelServiceInterface
         $relatedModelName = $model->$relation()->getQuery()->getModel()->getMorphClass();
         return $this->getModel($relatedModelName);
     }
+
+
+    public function getSchema(string|Model $model): array {}
 }

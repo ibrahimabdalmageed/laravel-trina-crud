@@ -5,33 +5,26 @@ namespace Trinavo\TrinaCrud\Tests\Unit\Services;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Mockery;
-use Trinavo\TrinaCrud\Contracts\AuthorizationServiceInterface;
-use Trinavo\TrinaCrud\Contracts\OwnershipServiceInterface;
+use Trinavo\TrinaCrud\Contracts\ModelServiceInterface;
 use Trinavo\TrinaCrud\Services\ModelService;
-use Trinavo\TrinaCrud\Tests\TestCase;
+use Trinavo\TrinaCrud\Tests\Base\TrinaTestCase;
 use Trinavo\TrinaCrud\Traits\HasCrud;
 
-class ModelServiceTest extends TestCase
+class ModelServiceTest extends TrinaTestCase
 {
     use RefreshDatabase;
 
     protected $modelService;
-    protected $authService;
-    protected $ownershipService;
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        // Create mocks for dependencies
-        $this->authService = Mockery::mock(AuthorizationServiceInterface::class);
-        $this->ownershipService = Mockery::mock(OwnershipServiceInterface::class);
+        $this->mockAuthService();
+        $this->mockOwnershipService();
 
         // Create the service instance
-        $this->modelService = new ModelService(
-            $this->authService,
-            $this->ownershipService
-        );
+        $this->modelService = app(ModelServiceInterface::class);
 
         // Bind test models to the container
         $this->app->bind('valid_model', ValidTestModel::class);

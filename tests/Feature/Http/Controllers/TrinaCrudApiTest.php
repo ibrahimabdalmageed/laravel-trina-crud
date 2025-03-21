@@ -6,17 +6,14 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Database\Eloquent\Model;
-use Trinavo\TrinaCrud\Tests\TestCase;
 use Mockery;
-use Trinavo\TrinaCrud\Contracts\AuthorizationServiceInterface;
-use Trinavo\TrinaCrud\Contracts\OwnershipServiceInterface;
+use Trinavo\TrinaCrud\Tests\Base\TrinaTestCase;
 use Trinavo\TrinaCrud\Traits\HasCrud;
 
-class TrinaCrudApiTest extends TestCase
+class TrinaCrudApiTest extends TrinaTestCase
 {
     use RefreshDatabase;
 
-    protected $authService;
     protected $testModel;
     protected $relatedModel;
 
@@ -27,25 +24,8 @@ class TrinaCrudApiTest extends TestCase
         // Create test tables and models
         $this->createTestModels();
 
-        // Create mocks for authorization service
-        $this->authService = Mockery::mock(AuthorizationServiceInterface::class);
-        $this->authService->shouldReceive('hasPermissionTo')->andReturn(true);
-        $this->authService->shouldReceive('getUser')->andReturn(null);
-
-        $ownershipService = Mockery::mock(OwnershipServiceInterface::class);
-        $ownershipService->shouldReceive('addOwnershipQuery')->andReturnUsing(function ($query, $modelClassName, $action) {
-            return $query;
-        });
-
-        $this->app->bind(OwnershipServiceInterface::class, function ($app) use ($ownershipService) {
-            return $ownershipService;
-        });
-
-
-        // Bind the mock to the container
-        $this->app->singleton(AuthorizationServiceInterface::class, function ($app) {
-            return $this->authService;
-        });
+        $this->mockAuthService();
+        $this->mockOwnershipService();
     }
 
     /**

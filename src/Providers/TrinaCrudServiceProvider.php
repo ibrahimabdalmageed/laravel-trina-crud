@@ -6,6 +6,7 @@ use Illuminate\Support\ServiceProvider;
 use Trinavo\TrinaCrud\Contracts\AuthorizationServiceInterface;
 use Trinavo\TrinaCrud\Contracts\ModelServiceInterface;
 use Trinavo\TrinaCrud\Contracts\OwnershipServiceInterface;
+use Trinavo\TrinaCrud\Http\Middleware\TrinaCrudAdminMiddleware;
 use Trinavo\TrinaCrud\Services\AuthorizationServices\AllowAllAuthorizationService;
 use Trinavo\TrinaCrud\Services\AuthorizationServices\SpatiePermissionAuthorizationService;
 use Trinavo\TrinaCrud\Services\ModelService;
@@ -27,8 +28,12 @@ class TrinaCrudServiceProvider extends ServiceProvider
 
         // Publish configuration (optional)
         $this->publishes([
-            __DIR__ . '/../../config/trinacrud.php' => config_path('trinacrud.php'),
+            __DIR__ . '/../../config/trina-crud.php' => config_path('trina-crud.php'),
         ], 'config');
+        
+        // Register middleware
+        $router = $this->app['router'];
+        $router->aliasMiddleware('trina-crud.admin', TrinaCrudAdminMiddleware::class);
     }
 
     /**

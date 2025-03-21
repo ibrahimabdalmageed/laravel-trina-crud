@@ -16,4 +16,55 @@ return [
     'model_paths' => [
         base_path('app/Models'),
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Route Prefix
+    |--------------------------------------------------------------------------
+    |
+    | This value is the prefix used for all TrinaCrud routes.
+    | You can change this to customize the URL structure of your API.
+    |
+    */
+    'route_prefix' => env('TRINA_CRUD_PREFIX', 'trina-crud'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Route Middleware
+    |--------------------------------------------------------------------------
+    |
+    | These middleware will be assigned to all TrinaCrud routes.
+    | You can add your own middleware to this list or use an empty array
+    | to disable all middleware for TrinaCrud routes.
+    |
+    */
+    'middleware' => [
+        // Default middleware for all TrinaCrud routes
+        // Examples: 'api', 'auth:api', 'auth:sanctum'
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Admin Route Middleware
+    |--------------------------------------------------------------------------
+    |
+    | These middleware will be assigned to administrative TrinaCrud routes
+    | such as sync-models which should be restricted to administrators.
+    |
+    */
+    'admin_middleware' => [
+        // Middleware for admin-only routes like sync-models
+        // Examples: 'auth:api', 'can:manage-trina-crud'
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Admin Permission
+    |--------------------------------------------------------------------------
+    |
+    | The permission name that grants admin access to TrinaCrud administrative
+    | routes when using the Spatie Permission-based authorization.
+    |
+    */
+    'admin_permission' => env('TRINA_CRUD_ADMIN_PERMISSION', 'manage-trina-crud'),
 ];

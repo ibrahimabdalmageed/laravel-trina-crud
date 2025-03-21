@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Trinavo\TrinaCrud\Enums\CrudAction;
 use Trinavo\TrinaCrud\Models\ModelSchema;
 
 interface ModelServiceInterface
@@ -81,20 +82,20 @@ interface ModelServiceInterface
      * Get the authorized attributes for a model
      * 
      * @param string|Model $modelName
-     * @param string $action
+     * @param CrudAction $action
      * @return array
      */
-    public function getAuthorizedAttributes(string|Model $modelName, string $action): array;
+    public function getAuthorizedAttributes(string|Model $modelName, CrudAction $action): array;
 
     /**
      * Scope the query to only include authorized records
      * 
      * @param Builder|Relation $query
      * @param string|Model $model
-     * @param string $action
+     * @param CrudAction $action
      * @return Builder|Relation
      */
-    public function scopeAuthorizedRecords(Builder|Relation $query, string|Model $model, string $action): Builder|Relation;
+    public function scopeAuthorizedRecords(Builder|Relation $query, string|Model $model, CrudAction $action): Builder|Relation;
 
     /**
      * Load the authorized relations
@@ -103,13 +104,15 @@ interface ModelServiceInterface
      * @param string|Model $model
      * @param array $relations
      * @param array $columnsByRelation
+     * @param CrudAction $action
      * @return Builder|Relation
      */
     public function loadAuthorizedRelations(
         Builder|Relation $query,
         string|Model $model,
         array $relations,
-        array $attributesByRelation = []
+        array $attributesByRelation = [],
+        CrudAction $action = CrudAction::READ
     ): Builder|Relation;
 
     /**
@@ -118,14 +121,14 @@ interface ModelServiceInterface
      * @param Builder|Relation $query
      * @param string|Model $model
      * @param array $filters
-     * @param string $action
+     * @param CrudAction $action
      * @return Builder|Relation
      */
     public function applyAuthorizedFilters(
         Builder|Relation $query,
         string|Model $model,
         array $filters,
-        string $action
+        CrudAction $action
     ): Builder|Relation;
 
 
@@ -168,9 +171,9 @@ interface ModelServiceInterface
      * Filter columns based on user permissions
      * 
      * @param string|Model $model
-     * @param string $action
+     * @param CrudAction $action
      * @param array|null $requestedAttributes
      * @return array
      */
-    public function filterAuthorizedAttributes(string|Model $model, string $action, ?array $requestedAttributes = null): array;
+    public function filterAuthorizedAttributes(string|Model $model, CrudAction $action, ?array $requestedAttributes = null): array;
 }

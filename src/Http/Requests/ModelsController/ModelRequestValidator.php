@@ -6,13 +6,14 @@ use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Trinavo\TrinaCrud\Contracts\ModelServiceInterface;
 use Trinavo\TrinaCrud\Contracts\AuthorizationServiceInterface;
+use Trinavo\TrinaCrud\Enums\CrudAction;
 
 class ModelRequestValidator extends FormRequest
 {
     /**
-     * @var ModelHelperInterface
+     * @var string
      */
-    protected $modelHelper;
+    protected $model;
 
     /**
      * @var ModelServiceInterface
@@ -24,6 +25,9 @@ class ModelRequestValidator extends FormRequest
      */
     protected $authorizationService;
 
+    /**
+     * @var CrudAction
+     */
     protected $action;
 
     public function authorize(): bool
@@ -41,18 +45,15 @@ class ModelRequestValidator extends FormRequest
 
 
     /**
-     * Configure the validator instance.
+     * Prepare the data for validation.
      *
-     * @param \Illuminate\Validation\Validator $validator
      * @return void
      */
-    public function withValidator($validator)
+    protected function prepareForValidation()
     {
-        $validator->after(function ($validator) {
-            $this->validateModelParameter();
-        });
+        $this->model = $this->route('model');
+        $this->validateModelParameter();
     }
-
 
     private function validateModelParameter()
     {
@@ -60,18 +61,11 @@ class ModelRequestValidator extends FormRequest
             throw new HttpResponseException(
                 response()->json([
                     'message' => 'Invalid model',
+                    'errors' => [
+                        'model' => ['Model not found or not authorized']
+                    ]
                 ], 422)
             );
         }
-    }
-
-    public function failedValidation($validator)
-    {
-        throw new HttpResponseException(
-            response()->json([
-                'message' => 'Validation Failed',
-                'errors' => $validator->errors(),
-            ], 422)
-        );
     }
 }

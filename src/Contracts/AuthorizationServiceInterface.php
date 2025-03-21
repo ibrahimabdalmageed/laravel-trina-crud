@@ -3,13 +3,14 @@
 namespace Trinavo\TrinaCrud\Contracts;
 
 use Illuminate\Database\Eloquent\Model;
+use Trinavo\TrinaCrud\Enums\CrudAction;
 
 interface AuthorizationServiceInterface
 {
     /**
-     * Check if the user has permission to access a model
-     *
-     * @param string $permissionName The name of the permission
+     * Check if the user has permission to perform an action
+     * 
+     * @param string $permissionName
      * @return bool
      */
     public function hasPermissionTo(string $permissionName): bool;
@@ -20,10 +21,10 @@ interface AuthorizationServiceInterface
      * Check if the user has permission to access a model
      *
      * @param string $modelName The name of the model
-     * @param string $action The action (view, create, update, delete)
+     * @param CrudAction $action The action (view, create, update, delete)
      * @return bool
      */
-    public function hasModelPermission(string $modelName, string $action): bool;
+    public function hasModelPermission(string $modelName, CrudAction $action): bool;
 
 
     /**
@@ -38,8 +39,8 @@ interface AuthorizationServiceInterface
      * 
      * @param Model $model The model
      * @param string $attribute The attribute
-     * @param string $action The action (view, create, update, delete)
+     * @param CrudAction $action The action (view, create, update, delete)
      * @return bool
      */
-    public function isAttributeAuthorized(Model $model, string $attribute, string $action): bool;
+    public function isAttributeAuthorized(Model $model, string $attribute, CrudAction $action): bool;
 }

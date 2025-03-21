@@ -13,14 +13,14 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Trinavo\TrinaCrud\Contracts\AuthorizationServiceInterface;
 use Trinavo\TrinaCrud\Contracts\ModelServiceInterface;
 use Trinavo\TrinaCrud\Contracts\OwnershipServiceInterface;
-use Trinavo\TrinaCrud\Traits\HasCrud;
+use Trinavo\TrinaCrud\Enums\CrudAction;
 use Trinavo\TrinaCrud\Models\ModelSchema;
+use Trinavo\TrinaCrud\Traits\HasCrud;
 
 class ModelService implements ModelServiceInterface
 {
     protected AuthorizationServiceInterface $authorizationService;
     protected OwnershipServiceInterface $ownershipService;
-
 
     public function __construct(
         AuthorizationServiceInterface $authorizationService,
@@ -36,7 +36,7 @@ class ModelService implements ModelServiceInterface
      * @param string $modelName The name of the model
      * @param array $attributes The columns to select
      * @param array|null $with The relations to load
-     * @param array $relationColumns The columns to select for each relation
+     * @param array $relationAttributes The columns to select for each relation
      * @param array $filters The filters to apply
      * @param int $perPage The number of records per page
      * @return LengthAwarePaginator
@@ -46,19 +46,18 @@ class ModelService implements ModelServiceInterface
         string $modelName,
         array $attributes = [],
         ?array $with = null,
-        array $relationColumns = [],
+        array $relationAttributes = [],
         array $filters = [],
         int $perPage = 15
     ): LengthAwarePaginator {
-
         $user = $this->authorizationService->getUser();
 
         if ($user) {
-            if (!$this->authorizationService->hasModelPermission($modelName, 'read')) {
+            if (!$this->authorizationService->hasModelPermission($modelName, CrudAction::READ)) {
                 throw new NotFoundHttpException('You are not authorized to read this model');
             }
         } else {
-            if (!$this->authorizationService->hasModelPermission($modelName, 'read_any')) {
+            if (!$this->authorizationService->hasModelPermission($modelName, CrudAction::READ_ANY)) {
                 throw new NotFoundHttpException('You are not authorized to read this model');
             }
         }
@@ -67,31 +66,29 @@ class ModelService implements ModelServiceInterface
         $model = $this->getModel($modelName);
 
         if (!$model) {
-            throw new NotFoundHttpException('Invalid model');
+            throw new NotFoundHttpException('Model not found');
         }
 
         // Create a new query
         $query = $model->query();
 
         // Apply ownership filtering
-        $query = $this->scopeAuthorizedRecords($query, $model, 'read');
+        $query = $this->scopeAuthorizedRecords($query, $model, CrudAction::READ);
 
         // Filter columns based on permissions
-        $authorizedAttributes  = $this->filterAuthorizedAttributes($model, 'read', $attributes);
+        $authorizedAttributes  = $this->filterAuthorizedAttributes($model, CrudAction::READ, $attributes);
 
         // Select only authorized columns if specified
         if (!empty($authorizedAttributes)) {
             $query->select($authorizedAttributes);
         }
 
-        // Load authorized relations
-        if ($with) {
-            $query = $this->loadAuthorizedRelations($query, $model, $with, $relationColumns);
-        }
-
         // Apply filters
-        if (!empty($filters)) {
-            $query = $this->applyAuthorizedFilters($query, $model, $filters, 'read');
+        $query = $this->applyAuthorizedFilters($query, $model, $filters, CrudAction::READ);
+
+        // Load relations if specified
+        if (!empty($with)) {
+            $query = $this->loadAuthorizedRelations($query, $model, $with, $relationAttributes, CrudAction::READ);
         }
 
         // Paginate the results
@@ -105,7 +102,7 @@ class ModelService implements ModelServiceInterface
      * @param int $id The ID of the record
      * @param array $attributes The columns to select
      * @param array|null $with The relations to load
-     * @param array $relationColumns The columns to select for each relation
+     * @param array $relationAttributes The columns to select for each relation
      * @return Model
      * @throws NotFoundHttpException
      */
@@ -114,21 +111,19 @@ class ModelService implements ModelServiceInterface
         int $id,
         array $attributes = [],
         ?array $with = null,
-        array $relationColumns = []
+        array $relationAttributes = []
     ): Model {
-
         $user = $this->authorizationService->getUser();
 
         if ($user) {
-            if (!$this->authorizationService->hasModelPermission($modelName, 'read')) {
+            if (!$this->authorizationService->hasModelPermission($modelName, CrudAction::READ)) {
                 throw new NotFoundHttpException('You are not authorized to read this model');
             }
         } else {
-            if (!$this->authorizationService->hasModelPermission($modelName, 'read_any')) {
+            if (!$this->authorizationService->hasModelPermission($modelName, CrudAction::READ_ANY)) {
                 throw new NotFoundHttpException('You are not authorized to read this model');
             }
         }
-
 
         // Find the model
         $model = $this->getModel($modelName);
@@ -141,19 +136,19 @@ class ModelService implements ModelServiceInterface
         $query = $model->query();
 
         // Apply ownership filtering
-        $query = $this->scopeAuthorizedRecords($query, $model, 'read');
+        $query = $this->scopeAuthorizedRecords($query, $model, CrudAction::READ);
 
         // Filter columns based on permissions
-        $authorizedAttributes  = $this->filterAuthorizedAttributes($model, 'read', $attributes);
+        $authorizedAttributes  = $this->filterAuthorizedAttributes($model, CrudAction::READ, $attributes);
 
         // Select only authorized columns if specified
         if (!empty($authorizedAttributes)) {
             $query->select($authorizedAttributes);
         }
 
-        // Load authorized relations
-        if ($with) {
-            $query = $this->loadAuthorizedRelations($query, $model, $with, $relationColumns);
+        // Load relations if specified
+        if (!empty($with)) {
+            $query = $this->loadAuthorizedRelations($query, $model, $with, $relationAttributes, CrudAction::READ);
         }
 
         // Find the record
@@ -179,11 +174,11 @@ class ModelService implements ModelServiceInterface
         $user = $this->authorizationService->getUser();
 
         if ($user) {
-            if (!$this->authorizationService->hasModelPermission($modelName, 'create')) {
+            if (!$this->authorizationService->hasModelPermission($modelName, CrudAction::CREATE)) {
                 throw new NotFoundHttpException('You are not authorized to create this model');
             }
         } else {
-            if (!$this->authorizationService->hasModelPermission($modelName, 'create_any')) {
+            if (!$this->authorizationService->hasModelPermission($modelName, CrudAction::CREATE_ANY)) {
                 throw new NotFoundHttpException('You are not authorized to create this model');
             }
         }
@@ -195,8 +190,10 @@ class ModelService implements ModelServiceInterface
             throw new NotFoundHttpException('Model not found');
         }
 
-        // Create the record
-        return $model->create($data);
+        // Create a new record
+        $record = $model->create($data);
+
+        return $record;
     }
 
     /**
@@ -210,15 +207,14 @@ class ModelService implements ModelServiceInterface
      */
     public function update(string $modelName, int $id, array $data): Model
     {
-
         $user = $this->authorizationService->getUser();
 
         if ($user) {
-            if (!$this->authorizationService->hasModelPermission($modelName, 'update')) {
+            if (!$this->authorizationService->hasModelPermission($modelName, CrudAction::UPDATE)) {
                 throw new NotFoundHttpException('You are not authorized to update this model');
             }
         } else {
-            if (!$this->authorizationService->hasModelPermission($modelName, 'update_any')) {
+            if (!$this->authorizationService->hasModelPermission($modelName, CrudAction::UPDATE_ANY)) {
                 throw new NotFoundHttpException('You are not authorized to update this model');
             }
         }
@@ -234,7 +230,7 @@ class ModelService implements ModelServiceInterface
         $query = $model->query();
 
         // Apply ownership filtering
-        $query = $this->scopeAuthorizedRecords($query, $model, 'update');
+        $query = $this->scopeAuthorizedRecords($query, $model, CrudAction::UPDATE);
 
         // Find the record
         $record = $query->find($id);
@@ -262,11 +258,11 @@ class ModelService implements ModelServiceInterface
         $user = $this->authorizationService->getUser();
 
         if ($user) {
-            if (!$this->authorizationService->hasModelPermission($modelName, 'delete')) {
+            if (!$this->authorizationService->hasModelPermission($modelName, CrudAction::DELETE)) {
                 throw new NotFoundHttpException('You are not authorized to delete this model');
             }
         } else {
-            if (!$this->authorizationService->hasModelPermission($modelName, 'delete_any')) {
+            if (!$this->authorizationService->hasModelPermission($modelName, CrudAction::DELETE_ANY)) {
                 throw new NotFoundHttpException('You are not authorized to delete this model');
             }
         }
@@ -282,7 +278,7 @@ class ModelService implements ModelServiceInterface
         $query = $model->query();
 
         // Apply ownership filtering
-        $query = $this->scopeAuthorizedRecords($query, $model, 'delete');
+        $query = $this->scopeAuthorizedRecords($query, $model, CrudAction::DELETE);
 
         // Find the record
         $record = $query->find($id);
@@ -295,22 +291,20 @@ class ModelService implements ModelServiceInterface
         return $record->delete();
     }
 
-
-
     /**
      * Get the authorized attributes for a model
      *
      * @param string|Model $model The model
-     * @param string $action The action (view, update)
+     * @param CrudAction $action The action (view, update)
      * @return array
      */
-    public function getAuthorizedAttributes(string|Model|HasCrud $model, string $action): array
+    public function getAuthorizedAttributes(string|Model $model, CrudAction $action): array
     {
         if (is_string($model)) {
             $model = $this->getModel($model);
         }
 
-        return $model->getCrudFillable($action);
+        return $model->getCrudFillable($action->value);
     }
 
     /**
@@ -318,42 +312,37 @@ class ModelService implements ModelServiceInterface
      *
      * @param Builder $query The query builder
      * @param string $modelName The name of the model
+     * @param CrudAction $action The action (view, update)
      * @return Builder
      */
-    public function scopeAuthorizedRecords(
-        Builder|Relation $query,
-        string|Model $model,
-        string $action
-    ): Builder|Relation {
-
+    public function scopeAuthorizedRecords(Builder|Relation $query, string|Model $model, CrudAction $action): Builder|Relation
+    {
         if (is_string($model)) {
             $model = $this->getModel($model);
         }
-        // Otherwise only return records owned by the user
-        $query = $this->ownershipService->addOwnershipQuery(
+
+        return $this->ownershipService->addOwnershipQuery(
             $query,
             $model,
-            $action
+            $action->value
         );
-
-        return $query;
     }
 
     /**
      * Filter columns based on user permissions
      *
      * @param string|Model $model
-     * @param string $action
+     * @param CrudAction $action
      * @param array|null $requestedAttributes
      * @return array
      */
-    public function filterAuthorizedAttributes(string|Model $model, string $action, ?array $requestedAttributes = null): array
+    public function filterAuthorizedAttributes(string|Model $model, CrudAction $action, ?array $requestedAttributes = null): array
     {
         if (is_string($model)) {
             $model = $this->getModel($model);
         }
 
-        return $model->getCrudFillable($action);
+        return $model->getCrudFillable($action->value);
     }
 
     /**
@@ -362,7 +351,8 @@ class ModelService implements ModelServiceInterface
      * @param Builder $query The query builder
      * @param string $modelName The name of the model
      * @param array $relations The relations to load
-     * @param array $columnsByRelation Optional columns to select for each relation
+     * @param array $attributesByRelation Optional columns to select for each relation
+     * @param CrudAction $action The action (view, update)
      * @return Builder|Relation
      */
     public function loadAuthorizedRelations(
@@ -370,9 +360,8 @@ class ModelService implements ModelServiceInterface
         string|Model $model,
         array $relations,
         array $attributesByRelation = [],
-        string $action = 'read',
+        CrudAction $action = CrudAction::READ,
     ): Builder|Relation {
-
         if (is_string($model)) {
             $model = $this->getModel($model);
         }
@@ -414,14 +403,14 @@ class ModelService implements ModelServiceInterface
      * @param Builder|Relation $query The query builder
      * @param string|Model $model The model
      * @param array $filters The filters to apply
-     * @param string $action The action (view, update)
+     * @param CrudAction $action The action (view, update)
      * @return Builder|Relation
      */
     public function applyAuthorizedFilters(
         Builder|Relation $query,
         string|Model $model,
         array $filters,
-        string $action = 'read'
+        CrudAction $action
     ): Builder|Relation {
         if (empty($filters)) {
             return $query;
@@ -612,7 +601,7 @@ class ModelService implements ModelServiceInterface
 
     /**
      * Parse a model file to extract model information
-     * 
+     *
      * @param string $file The path to the model file
      * @param string|null $namespace The namespace of the model
      * @return ModelSchema|null

@@ -30,10 +30,6 @@ class TrinaCrudServiceProvider extends ServiceProvider
         $this->publishes([
             __DIR__ . '/../../config/trina-crud.php' => config_path('trina-crud.php'),
         ], 'config');
-        
-        // Register middleware
-        $router = $this->app['router'];
-        $router->aliasMiddleware('trina-crud.admin', TrinaCrudAdminMiddleware::class);
     }
 
     /**
@@ -46,15 +42,6 @@ class TrinaCrudServiceProvider extends ServiceProvider
             __DIR__ . '/../../config/trina-crud.php',
             'trina-crud'
         );
-
-        $this->commands([
-            \Trinavo\TrinaCrud\Console\Commands\SyncTrinaCrudModelsCommand::class,
-            \Trinavo\TrinaCrud\Console\Commands\SyncTrinaCrudColumnsCommand::class,
-        ]);
-
-        $this->app->singleton('dart-model-generator', function () {
-            return new \Trinavo\TrinaCrud\Services\Generators\DartModelGeneratorService();
-        });
 
         $this->app->singleton(ModelServiceInterface::class, ModelService::class);
 

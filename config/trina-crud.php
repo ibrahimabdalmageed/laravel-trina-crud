@@ -26,7 +26,7 @@ return [
     | You can change this to customize the URL structure of your API.
     |
     */
-    'route_prefix' => env('TRINA_CRUD_PREFIX', 'trina-crud'),
+    'route_prefix' => env('TRINA_CRUD_PREFIX', 'api/crud'),
 
     /*
     |--------------------------------------------------------------------------
@@ -56,15 +56,4 @@ return [
         // Middleware for admin-only routes like sync-models
         // Examples: 'auth:api', 'can:manage-trina-crud'
     ],
-
-    /*
-    |--------------------------------------------------------------------------
-    | Admin Permission
-    |--------------------------------------------------------------------------
-    |
-    | The permission name that grants admin access to TrinaCrud administrative
-    | routes when using the Spatie Permission-based authorization.
-    |
-    */
-    'admin_permission' => env('TRINA_CRUD_ADMIN_PERMISSION', 'manage-trina-crud'),
 ];

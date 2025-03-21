@@ -14,13 +14,5 @@ interface AuthorizationServiceInterface
      */
     public function hasPermissionTo(string $permissionName): bool;
 
-    /**
-     * Check if the user has admin access to TrinaCrud
-     * This is used to protect administrative routes like sync-models
-     *
-     * @return bool
-     */
-    public function hasAdminAccess(): bool;
-
     public function getUser(): ?Model;
 }

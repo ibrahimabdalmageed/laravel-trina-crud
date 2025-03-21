@@ -48,7 +48,7 @@ class ModelRequestValidator extends FormRequest
 
     private function validateModelParameter()
     {
-        if (!$this->modelService->isModelExists($this->model)) {
+        if (!$this->modelService->getModel($this->model)) {
             throw new HttpResponseException(
                 response()->json([
                     'message' => 'Invalid model',

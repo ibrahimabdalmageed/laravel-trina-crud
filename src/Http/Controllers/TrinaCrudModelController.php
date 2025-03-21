@@ -2,12 +2,13 @@
 
 namespace Trinavo\TrinaCrud\Http\Controllers;
 
+use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Trinavo\TrinaCrud\Contracts\ModelServiceInterface;
 use Trinavo\TrinaCrud\Http\Requests\ModelsController\ValidateTrinaCrudModelCreateRequest;
 use Trinavo\TrinaCrud\Http\Requests\ModelsController\ValidateTrinaCrudModelIndexRequest;
-use Trinavo\TrinaCrud\Services\TrinaCrudModelService;
 
 class TrinaCrudModelController extends Controller
 {
@@ -33,7 +34,7 @@ class TrinaCrudModelController extends Controller
         ValidateTrinaCrudModelIndexRequest $request
     ) {
         try {
-            $columns = $request->input('columns', []);
+            $attributes = $request->input('columns', []);
             $with = $request->has('with') ?
                 (is_array($request->with) ? $request->with : explode(',', $request->with)) :
                 null;
@@ -41,17 +42,17 @@ class TrinaCrudModelController extends Controller
             $filters = $request->input('filters', []);
             $perPage = $request->input('per_page', 15);
 
-            return $this->modelService->getModelRecords(
+            return $this->modelService->all(
                 $model,
-                $columns,
+                $attributes,
                 $with,
                 $relationColumns,
                 $filters,
                 $perPage
             );
-        } catch (\Symfony\Component\HttpKernel\Exception\NotFoundHttpException $e) {
+        } catch (NotFoundHttpException $e) {
             return response()->json(['error' => $e->getMessage()], 404);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return response()->json(['error' => 'An error occurred: ' . $e->getMessage()], 500);
         }
     }
@@ -69,16 +70,16 @@ class TrinaCrudModelController extends Controller
         $id
     ) {
         try {
-            $columns = $request->input('columns', []);
+            $attributes = $request->input('columns', []);
             $with = $request->has('with') ?
                 (is_array($request->with) ? $request->with : explode(',', $request->with)) :
                 null;
             $relationColumns = $request->input('relation_columns', []);
 
-            return $this->modelService->getModelRecord(
+            return $this->modelService->find(
                 $model,
                 $id,
-                $columns,
+                $attributes,
                 $with,
                 $relationColumns
             );
@@ -104,10 +105,10 @@ class TrinaCrudModelController extends Controller
             // Filter input data to exclude non-column fields
             $data = collect($request->all())->except(['model'])->toArray();
 
-            return $this->modelService->createModelRecord($model, $data);
-        } catch (\Symfony\Component\HttpKernel\Exception\NotFoundHttpException $e) {
+            return $this->modelService->create($model, $data);
+        } catch (NotFoundHttpException $e) {
             return response()->json(['error' => $e->getMessage()], 404);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return response()->json(['error' => 'An error occurred: ' . $e->getMessage()], 500);
         }
     }
@@ -129,10 +130,10 @@ class TrinaCrudModelController extends Controller
             // Filter input data to exclude non-column fields
             $data = collect($request->all())->except(['model'])->toArray();
 
-            return $this->modelService->updateModelRecord($model, $id, $data);
-        } catch (\Symfony\Component\HttpKernel\Exception\NotFoundHttpException $e) {
+            return $this->modelService->update($model, $id, $data);
+        } catch (NotFoundHttpException $e) {
             return response()->json(['error' => $e->getMessage()], 404);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return response()->json(['error' => 'An error occurred: ' . $e->getMessage()], 500);
         }
     }
@@ -152,12 +153,12 @@ class TrinaCrudModelController extends Controller
         try {
 
 
-            $result = $this->modelService->deleteModelRecord($model, $id);
+            $result = $this->modelService->delete($model, $id);
 
             return response()->json(['success' => $result]);
-        } catch (\Symfony\Component\HttpKernel\Exception\NotFoundHttpException $e) {
+        } catch (NotFoundHttpException $e) {
             return response()->json(['error' => $e->getMessage()], 404);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return response()->json(['error' => 'An error occurred: ' . $e->getMessage()], 500);
         }
     }

@@ -1,16 +1,17 @@
 <?php
 
-namespace Trinavo\TrinaCrud\Tests\Feature\Http\Controllers;
+namespace Trinavo\TrinaCrud\Tests\Unit\Services;
 
-use Illuminate\Container\Attributes\Authenticated;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Schema;
 use Trinavo\TrinaCrud\Tests\TestCase;
-use Trinavo\TrinaCrud\Models\TrinaCrudModel;
 use Mockery;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Trinavo\TrinaCrud\Contracts\AuthorizationServiceInterface;
 use Trinavo\TrinaCrud\Contracts\ModelServiceInterface;
+use Trinavo\TrinaCrud\Contracts\OwnershipServiceInterface;
+use Trinavo\TrinaCrud\Traits\HasCrud;
 
 class TrinaCrudModelControllerFeatureTest extends TestCase
 {
@@ -31,18 +32,6 @@ class TrinaCrudModelControllerFeatureTest extends TestCase
                 $table->timestamps();
             });
         }
-
-        // Create a test model in the TrinaCrudModel table
-        TrinaCrudModel::create([
-            'class_name' => TestUser::class,
-            'caption' => 'Test User',
-            'multi_caption' => 'Test Users',
-            'model_name' => 'test_user',
-            'model_short' => 'test_user',
-            'page_size' => 10,
-            'order_by' => 'id'
-        ]);
-
         // Create some test data
         TestUser::create([
             'name' => 'John Doe',
@@ -54,9 +43,6 @@ class TrinaCrudModelControllerFeatureTest extends TestCase
             'email' => 'jane@example.com',
         ]);
 
-        //run sync columns
-        $this->artisan('trinacrud:sync-columns', ['model' => TestUser::class]);
-
         $this->app->bind(TestUser::class, function ($app) {
             return new TestUser();
         });
@@ -67,6 +53,16 @@ class TrinaCrudModelControllerFeatureTest extends TestCase
         $this->authService->shouldReceive('hasPermissionTo')->andReturn(true);
         $this->authService->shouldReceive('getUser')->andReturn(null);
 
+        $ownershipService = Mockery::mock(OwnershipServiceInterface::class);
+
+        $ownershipService->shouldReceive('addOwnershipQuery')->andReturnUsing(function ($query, $modelClassName, $action) {
+            return $query;
+        });
+
+        $this->app->bind(OwnershipServiceInterface::class, function ($app) use ($ownershipService) {
+            return $ownershipService;
+        });
+
         // Bind the mock to the container
         $this->app->singleton(AuthorizationServiceInterface::class, function ($app) {
             return $this->authService;
@@ -75,11 +71,6 @@ class TrinaCrudModelControllerFeatureTest extends TestCase
 
     public function testDatabaseConnection()
     {
-        // Verify that the TrinaCrudModel was created
-        $model = TrinaCrudModel::where('class_name', TestUser::class)->first();
-        $this->assertNotNull($model);
-        $this->assertEquals('Test User', $model->caption);
-
         // Verify that the test users were created
         $this->assertEquals(2, TestUser::count());
         $user = TestUser::where('email', 'john@example.com')->first();
@@ -89,11 +80,8 @@ class TrinaCrudModelControllerFeatureTest extends TestCase
 
     public function testGetModelRecordsReturnsExpectedResults()
     {
-        // Get the test data
-        $users = TestUser::all();
-
         // Call the method
-        $result = app(ModelServiceInterface::class)->getModelRecords(TestUser::class);
+        $result = app(ModelServiceInterface::class)->all(TestUser::class);
 
         // Assert the result is a paginator
         $this->assertInstanceOf(LengthAwarePaginator::class, $result);
@@ -113,7 +101,7 @@ class TrinaCrudModelControllerFeatureTest extends TestCase
         // Get a test user
         $user = TestUser::first();
         // Call the method
-        $result = app(ModelServiceInterface::class)->getModelRecord(TestUser::class, $user->id);
+        $result = app(ModelServiceInterface::class)->find(TestUser::class, $user->id);
 
         // Assert the result is the expected model
         $this->assertEquals($user->id, $result->id);
@@ -130,7 +118,7 @@ class TrinaCrudModelControllerFeatureTest extends TestCase
         ];
 
         // Call the method
-        $result = app(ModelServiceInterface::class)->createModelRecord(TestUser::class, $data);
+        $result = app(ModelServiceInterface::class)->create(TestUser::class, $data);
 
         // Assert the result is the expected model
         $this->assertEquals(3, $result->id);
@@ -150,7 +138,7 @@ class TrinaCrudModelControllerFeatureTest extends TestCase
         ];
 
         // Call the method
-        $result = app(ModelServiceInterface::class)->updateModelRecord(TestUser::class, $user->id, $data);
+        $result = app(ModelServiceInterface::class)->update(TestUser::class, $user->id, $data);
 
         // Assert the result is the expected model
         $this->assertEquals($user->id, $result->id);
@@ -164,7 +152,7 @@ class TrinaCrudModelControllerFeatureTest extends TestCase
         $user = TestUser::first();
 
         // Call the method
-        $result = app(ModelServiceInterface::class)->deleteModelRecord(TestUser::class, $user->id);
+        $result = app(ModelServiceInterface::class)->delete(TestUser::class, $user->id);
 
         // Assert the result is true
         $this->assertTrue($result);
@@ -183,8 +171,9 @@ class TrinaCrudModelControllerFeatureTest extends TestCase
 /**
  * Test model class for the feature test
  */
-class TestUser extends \Illuminate\Database\Eloquent\Model
+class TestUser extends Model
 {
+    use HasCrud;
     protected $table = 'test_users';
-    protected $fillable = ['name', 'email'];
+    protected $fillable = ['id', 'name', 'email'];
 }

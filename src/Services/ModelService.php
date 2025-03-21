@@ -4,6 +4,7 @@ namespace Trinavo\TrinaCrud\Services;
 
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Str;
@@ -11,7 +12,7 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Trinavo\TrinaCrud\Contracts\AuthorizationServiceInterface;
 use Trinavo\TrinaCrud\Contracts\ModelServiceInterface;
 use Trinavo\TrinaCrud\Contracts\OwnershipServiceInterface;
-use Trinavo\TrinaCrud\Models\TrinaCrudModel;
+use Trinavo\TrinaCrud\Traits\HasCrud;
 
 class ModelService implements ModelServiceInterface
 {
@@ -31,7 +32,7 @@ class ModelService implements ModelServiceInterface
      * Get a paginated list of model records with filtering and authorization
      *
      * @param string $modelName The name of the model
-     * @param array $columns The columns to select
+     * @param array $attributes The columns to select
      * @param array|null $with The relations to load
      * @param array $relationColumns The columns to select for each relation
      * @param array $filters The filters to apply
@@ -39,46 +40,56 @@ class ModelService implements ModelServiceInterface
      * @return LengthAwarePaginator
      * @throws NotFoundHttpException
      */
-    public function getModelRecords(
+    public function all(
         string $modelName,
-        array $columns = [],
+        array $attributes = [],
         ?array $with = null,
         array $relationColumns = [],
         array $filters = [],
         int $perPage = 15
     ): LengthAwarePaginator {
-        // Find the model
-        $trinaCrudModel = $this->findTrinaCrudModel($modelName);
 
-        if (!$trinaCrudModel) {
-            throw new NotFoundHttpException('Model not found');
+        $user = $this->authorizationService->getUser();
+
+        if ($user) {
+            if (!$this->hasModelPermission($modelName, 'read')) {
+                throw new NotFoundHttpException('You are not authorized to read this model');
+            }
+        } else {
+            if (!$this->hasModelPermission($modelName, 'read_any')) {
+                throw new NotFoundHttpException('You are not authorized to read this model');
+            }
         }
 
-        // Get the model class
-        $modelClass = $trinaCrudModel->class_name;
+        // Find the model
+        $model = $this->getModel($modelName);
+
+        if (!$model) {
+            throw new NotFoundHttpException('Invalid model');
+        }
 
         // Create a new query
-        $query = app($modelClass)->query();
+        $query = $model->query();
 
         // Apply ownership filtering
-        $query = $this->scopeAuthorizedRecords($query, $modelName);
+        $query = $this->scopeAuthorizedRecords($query, $model, 'read');
 
         // Filter columns based on permissions
-        $authorizedColumns = $this->filterAuthorizedColumns($modelName, $columns);
+        $authorizedAttributes  = $this->filterAuthorizedAttributes($model, $attributes);
 
         // Select only authorized columns if specified
-        if (!empty($authorizedColumns)) {
-            $query->select($authorizedColumns);
+        if (!empty($authorizedAttributes)) {
+            $query->select($authorizedAttributes);
         }
 
         // Load authorized relations
         if ($with) {
-            $query = $this->loadAuthorizedRelations($query, $modelName, $with, $relationColumns);
+            $query = $this->loadAuthorizedRelations($query, $model, $with, $relationColumns);
         }
 
         // Apply filters
         if (!empty($filters)) {
-            $query = $this->applyAuthorizedFilters($query, $modelName, $filters);
+            $query = $this->applyAuthorizedFilters($query, $model, $filters, 'read');
         }
 
         // Paginate the results
@@ -90,46 +101,57 @@ class ModelService implements ModelServiceInterface
      *
      * @param string $modelName The name of the model
      * @param int $id The ID of the record
-     * @param array $columns The columns to select
+     * @param array $attributes The columns to select
      * @param array|null $with The relations to load
      * @param array $relationColumns The columns to select for each relation
      * @return Model
      * @throws NotFoundHttpException
      */
-    public function getModelRecord(
+    public function find(
         string $modelName,
         int $id,
-        array $columns = [],
+        array $attributes = [],
         ?array $with = null,
         array $relationColumns = []
     ): Model {
-        // Find the model
-        $trinaCrudModel = $this->findTrinaCrudModel($modelName);
 
-        if (!$trinaCrudModel) {
+        $user = $this->authorizationService->getUser();
+
+        if ($user) {
+            if (!$this->hasModelPermission($modelName, 'read')) {
+                throw new NotFoundHttpException('You are not authorized to read this model');
+            }
+        } else {
+            if (!$this->hasModelPermission($modelName, 'read_any')) {
+                throw new NotFoundHttpException('You are not authorized to read this model');
+            }
+        }
+
+
+        // Find the model
+        $model = $this->getModel($modelName);
+
+        if (!$model) {
             throw new NotFoundHttpException('Model not found');
         }
 
-        // Get the model class
-        $modelClass = $trinaCrudModel->class_name;
-
         // Create a new query
-        $query = app($modelClass)->query();
+        $query = $model->query();
 
         // Apply ownership filtering
-        $query = $this->scopeAuthorizedRecords($query, $modelName);
+        $query = $this->scopeAuthorizedRecords($query, $model, 'read');
 
         // Filter columns based on permissions
-        $authorizedColumns = $this->filterAuthorizedColumns($modelName, $columns);
+        $authorizedAttributes  = $this->filterAuthorizedAttributes($model, $attributes);
 
         // Select only authorized columns if specified
-        if (!empty($authorizedColumns)) {
-            $query->select($authorizedColumns);
+        if (!empty($authorizedAttributes)) {
+            $query->select($authorizedAttributes);
         }
 
         // Load authorized relations
         if ($with) {
-            $query = $this->loadAuthorizedRelations($query, $modelName, $with, $relationColumns);
+            $query = $this->loadAuthorizedRelations($query, $model, $with, $relationColumns);
         }
 
         // Find the record
@@ -150,27 +172,29 @@ class ModelService implements ModelServiceInterface
      * @return Model
      * @throws NotFoundHttpException
      */
-    public function createModelRecord(string $modelName, array $data): Model
+    public function create(string $modelName, array $data): Model
     {
-        // Find the model
-        $trinaCrudModel = $this->findTrinaCrudModel($modelName);
+        $user = $this->authorizationService->getUser();
 
-        if (!$trinaCrudModel) {
+        if ($user) {
+            if (!$this->hasModelPermission($modelName, 'create')) {
+                throw new NotFoundHttpException('You are not authorized to create this model');
+            }
+        } else {
+            if (!$this->hasModelPermission($modelName, 'create_any')) {
+                throw new NotFoundHttpException('You are not authorized to create this model');
+            }
+        }
+
+        // Find the model
+        $model = $this->getModel($modelName);
+
+        if (!$model) {
             throw new NotFoundHttpException('Model not found');
         }
 
-        // Get the model class
-        $modelClass = $trinaCrudModel->class_name;
-
-        // Filter data based on permissions
-        $authorizedColumns = [];
-        foreach ($data as $key => $value) {
-            if ($this->hasColumnPermission($modelName, $key, 'create')) {
-                $authorizedColumns[$key] = $value;
-            }
-        }
         // Create the record
-        return app($modelClass)->create($authorizedColumns);
+        return $model->create($data);
     }
 
     /**
@@ -182,8 +206,9 @@ class ModelService implements ModelServiceInterface
      * @return Model
      * @throws NotFoundHttpException
      */
-    public function updateModelRecord(string $modelName, int $id, array $data): Model
+    public function update(string $modelName, int $id, array $data): Model
     {
+
         $user = $this->authorizationService->getUser();
 
         if ($user) {
@@ -197,20 +222,17 @@ class ModelService implements ModelServiceInterface
         }
 
         // Find the model
-        $trinaCrudModel = $this->findTrinaCrudModel($modelName);
+        $model = $this->getModel($modelName);
 
-        if (!$trinaCrudModel) {
+        if (!$model) {
             throw new NotFoundHttpException('Model not found');
         }
 
-        // Get the model class
-        $modelClass = $trinaCrudModel->class_name;
-
         // Create a new query
-        $query = app($modelClass)->query();
+        $query = $model->query();
 
         // Apply ownership filtering
-        $query = $this->scopeAuthorizedRecords($query, $modelName);
+        $query = $this->scopeAuthorizedRecords($query, $model, 'update');
 
         // Find the record
         $record = $query->find($id);
@@ -219,16 +241,8 @@ class ModelService implements ModelServiceInterface
             throw new NotFoundHttpException('Record not found');
         }
 
-        // Filter data based on permissions
-        $authorizedData = [];
-        foreach ($data as $key => $value) {
-            if ($this->hasColumnPermission($modelName, $key, 'update')) {
-                $authorizedData[$key] = $value;
-            }
-        }
-
         // Update the record
-        $record->update($authorizedData);
+        $record->update($data);
 
         return $record;
     }
@@ -241,7 +255,7 @@ class ModelService implements ModelServiceInterface
      * @return bool
      * @throws NotFoundHttpException
      */
-    public function deleteModelRecord(string $modelName, int $id): bool
+    public function delete(string $modelName, int $id): bool
     {
         $user = $this->authorizationService->getUser();
 
@@ -256,20 +270,17 @@ class ModelService implements ModelServiceInterface
         }
 
         // Find the model
-        $trinaCrudModel = $this->findTrinaCrudModel($modelName);
+        $model = $this->getModel($modelName);
 
-        if (!$trinaCrudModel) {
+        if (!$model) {
             throw new NotFoundHttpException('Model not found');
         }
 
-        // Get the model class
-        $modelClass = $trinaCrudModel->class_name;
-
         // Create a new query
-        $query = app($modelClass)->query();
+        $query = $model->query();
 
         // Apply ownership filtering
-        $query = $this->scopeAuthorizedRecords($query, $modelName);
+        $query = $this->scopeAuthorizedRecords($query, $model, 'delete');
 
         // Find the record
         $record = $query->find($id);
@@ -306,24 +317,19 @@ class ModelService implements ModelServiceInterface
     }
 
     /**
-     * Check if the user has permission to access a column
+     * Get the authorized attributes for a model
      *
-     * @param string $modelName The name of the model
-     * @param string $columnName The name of the column
+     * @param string|Model $model The model
      * @param string $action The action (view, update)
-     * @return bool
+     * @return array
      */
-    public function hasColumnPermission(string $modelName, string $columnName, string $action): bool
+    public function getAuthorizedAttributes(string|Model $model, string $action): array
     {
-        // Convert camelCase to kebab-case for permission names
-        $columnPermission = Str::kebab($action) . '-' . Str::kebab($modelName) . '-' . Str::kebab($columnName);
-
-        // Check for column-specific permission first
-        if ($this->authorizationService->hasPermissionTo($columnPermission)) {
-            return true;
-        } else {
-            return false;
+        if (is_string($model)) {
+            $model = $this->getModel($model);
         }
+
+        return $model->getFillable();
     }
 
     /**
@@ -333,22 +339,21 @@ class ModelService implements ModelServiceInterface
      * @param string $modelName The name of the model
      * @return Builder
      */
-    public function scopeAuthorizedRecords(Builder|Relation $query, string $modelName): Builder|Relation
-    {
-        $user = $this->authorizationService->getUser();
+    public function scopeAuthorizedRecords(
+        Builder|Relation $query,
+        string|Model $model,
+        string $action
+    ): Builder|Relation {
 
-        // Check if model uses Ownable trait
-        $modelClass = $this->resolveModelClass($modelName);
-        if (!$modelClass || !class_exists($modelClass)) {
-            return $query;
+        if (is_string($model)) {
+            $model = $this->getModel($model);
         }
-
-        if ($this->hasModelPermission($modelName, 'view_any')) {
-            return $query;
-        }
-
         // Otherwise only return records owned by the user
-        $query = $this->ownershipService->addOwnershipQuery($query, $user->id, $modelClass);
+        $query = $this->ownershipService->addOwnershipQuery(
+            $query,
+            $model,
+            $action
+        );
 
         return $query;
     }
@@ -360,24 +365,13 @@ class ModelService implements ModelServiceInterface
      * @param array|null $requestedColumns The columns requested by the user
      * @return array
      */
-    public function filterAuthorizedColumns(string $modelName, ?array $requestedColumns = null): array
+    public function filterAuthorizedAttributes(string|Model $model, ?array $requestedColumns = null): array
     {
-        // Get all columns for the model
-        $trinaCrudModel = $this->findTrinaCrudModel($modelName);
-
-        if (!$trinaCrudModel) {
-            return $requestedColumns ?? [];
+        if (is_string($model)) {
+            $model = $this->getModel($model);
         }
 
-        $allColumns = $trinaCrudModel->columns()->pluck('column_name')->toArray();
-
-        // If no columns requested, use all columns
-        $columnsToCheck = $requestedColumns ?? $allColumns;
-
-        // Filter columns based on permissions
-        return array_filter($columnsToCheck, function ($column) use ($modelName) {
-            return $this->hasColumnPermission($modelName, $column, 'view');
-        });
+        return $model->getFillable();
     }
 
     /**
@@ -391,33 +385,40 @@ class ModelService implements ModelServiceInterface
      */
     public function loadAuthorizedRelations(
         Builder|Relation $query,
-        string $modelName,
+        string|Model $model,
         array $relations,
-        array $columnsByRelation = []
+        array $attributesByRelation = [],
+        string $action = 'read',
     ): Builder|Relation {
+
+        if (is_string($model)) {
+            $model = $this->getModel($model);
+        }
+
         foreach ($relations as $relation) {
+
             // Get the related model name
-            $relatedModelName = $this->getRelatedModelName($modelName, $relation);
+            $relatedModel = $this->getRelatedModel($model, $relation);
 
             // Check if user has permission to view the related model
-            if (!$this->hasModelPermission($relatedModelName, 'view')) {
+            if (!$this->hasModelPermission($relatedModel, $action)) {
                 continue;
             }
 
             // Get authorized columns for the relation
-            $columns = $columnsByRelation[$relation] ?? null;
-            $authorizedColumns = $this->filterAuthorizedColumns($relatedModelName, $columns);
+            $attributes = $columnsByRelation[$relation] ?? null;
+            $authorizedAttributes  = $this->filterAuthorizedAttributes($relatedModel, $attributes);
 
             // Load relation with ownership scope and column restrictions
-            $query->with([$relation => function ($q) use ($relatedModelName, $authorizedColumns) {
+            $query->with([$relation => function ($q) use ($relatedModel, $authorizedAttributes, $action) {
                 // Apply ownership filter
-                $this->scopeAuthorizedRecords($q, $relatedModelName);
+                $this->scopeAuthorizedRecords($q, $relatedModel, $action);
 
                 // Select only authorized columns if specified
-                if (!empty($authorizedColumns)) {
+                if (!empty($authorizedAttributes)) {
                     // Always include the primary key
-                    $authorizedColumns[] = 'id';
-                    $q->select(array_unique($authorizedColumns));
+                    $authorizedAttributes[] = 'id';
+                    $q->select(array_unique($authorizedAttributes));
                 }
             }]);
         }
@@ -433,26 +434,58 @@ class ModelService implements ModelServiceInterface
      * @param array $filters The filters to apply
      * @return Builder|Relation
      */
-    public function applyAuthorizedFilters(Builder|Relation $query, string $modelName, array $filters): Builder|Relation
-    {
-        foreach ($filters as $column => $value) {
-            // Skip if user doesn't have permission to filter by this column
-            if (!$this->hasColumnPermission($modelName, $column, 'view')) {
-                continue;
+    public function applyAuthorizedFilters(
+        Builder|Relation $query,
+        string|Model $model,
+        array $filters,
+        string $action
+    ): Builder|Relation {
+        $fillables = $this->getAuthorizedAttributes($model, $action);
+        $relationsFillables = [];
+        $relationMap = [];
+        foreach ($filters as $attribute => $value) {
+            if (str_contains($attribute, '.')) {
+                $relationName = explode('.', $attribute)[0];
+                if (!isset($relationsFillables[$relationName])) {
+                    $relatedModel = $this->getRelatedModel($model, $relationName);
+                    $relationMap[$relationName] = $relatedModel;
+                    if (!$relatedModel) {
+                        continue;
+                    }
+                    $relationsFillables[$relationName] = $this->getAuthorizedAttributes($relatedModel, $action);
+                }
+            }
+        }
+
+        foreach ($filters as $attribute => $value) {
+            if (str_contains($attribute, '.')) {
+                $relationName = explode('.', $attribute)[0];
+                $attributeWithRelation = explode('.', $attribute)[1];
+                $relatedModel = $relationMap[$relationName];
+                if (!$relatedModel) {
+                    continue;
+                }
+                if (!in_array($attributeWithRelation, $relationsFillables[$relationName])) {
+                    continue;
+                }
+            } else {
+                if (!in_array($attribute, $fillables)) {
+                    continue;
+                }
             }
 
             // Handle different filter types
             if (is_array($value)) {
                 // Check for special operators
                 if (isset($value['operator'])) {
-                    $this->applyOperatorFilter($query, $column, $value);
+                    $this->applyOperatorFilter($query, $attribute, $value);
                 } else {
                     // Default to "in" operator for arrays
-                    $query->whereIn($column, $value);
+                    $query->whereIn($attribute, $value);
                 }
             } else {
                 // Simple equality filter
-                $query->where($column, $value);
+                $query->where($attribute, $value);
             }
         }
 
@@ -463,11 +496,11 @@ class ModelService implements ModelServiceInterface
      * Apply a filter with a specific operator
      *
      * @param Builder $query The query builder
-     * @param string $column The column to filter
+     * @param string $attribute The column to filter
      * @param array $filter The filter configuration
      * @return Builder
      */
-    protected function applyOperatorFilter(Builder $query, string $column, array $filter): Builder
+    protected function applyOperatorFilter(Builder $query, string $attribute, array $filter): Builder
     {
         $operator = $filter['operator'] ?? '=';
         $value = $filter['value'] ?? null;
@@ -475,99 +508,58 @@ class ModelService implements ModelServiceInterface
         switch ($operator) {
             case 'between':
                 if (is_array($value) && count($value) === 2) {
-                    $query->whereBetween($column, $value);
+                    $query->whereBetween($attribute, $value);
                 }
                 break;
             case 'not_in':
                 if (is_array($value)) {
-                    $query->whereNotIn($column, $value);
+                    $query->whereNotIn($attribute, $value);
                 }
                 break;
             case 'like':
-                $query->where($column, 'like', "%{$value}%");
+                $query->where($attribute, 'like', "%{$value}%");
                 break;
             case 'not':
             case '!=':
-                $query->where($column, '!=', $value);
+                $query->where($attribute, '!=', $value);
                 break;
             case '>':
             case '<':
             case '>=':
             case '<=':
-                $query->where($column, $operator, $value);
+                $query->where($attribute, $operator, $value);
                 break;
             default:
-                $query->where($column, $operator, $value);
+                $query->where($attribute, $operator, $value);
         }
 
         return $query;
     }
 
-    /**
-     * Resolve a model class from its name
-     *
-     * @param string $modelName The name of the model
-     * @return string|null
-     */
-    protected function resolveModelClass(string $modelName): ?string
+    public function getModel(string|Model $modelClass): ?Model
     {
-        // Try to find the model in the TrinaCrudModel table
-        $trinaCrudModel = $this->findTrinaCrudModel($modelName);
-
-        if ($trinaCrudModel && !empty($trinaCrudModel->class_name)) {
-            return $trinaCrudModel->class_name;
+        $model = app($modelClass);
+        if (!$model) {
+            return null;
         }
-
-        return null;
-    }
-
-    /**
-     * Get the related model name from a relation
-     *
-     * @param string $modelName The parent model name
-     * @param string $relation The relation name
-     * @return string
-     */
-    protected function getRelatedModelName(string $modelName, string $relation): string
-    {
-        // Try to determine the related model from the relation name
-        return Str::studly(Str::singular($relation));
-    }
-
-
-    /**
-     * Find a TrinaCrudModel by name
-     *
-     * @param string $modelName The name of the model
-     * @return TrinaCrudModel|null
-     */
-    public function findTrinaCrudModel(string $classOrModelName): ?object
-    {
-        if (Str::contains($classOrModelName, '\\')) {
-            $modelName = $this->makeModelNameFromClass($classOrModelName);
-        } else {
-            $modelName = $classOrModelName;
+        if (!is_subclass_of($model, Model::class)) {
+            return null;
         }
-
-        return TrinaCrudModel::where('class_name', $classOrModelName)
-            ->orWhere('model_name', $modelName)->first();
-    }
-
-
-    public function isModelExists(string $classOrModelName): bool
-    {
-        if (Str::contains($classOrModelName, '\\')) {
-            $modelName = $this->makeModelNameFromClass($classOrModelName);
-        } else {
-            $modelName = $classOrModelName;
+        if (!in_array(HasCrud::class, class_uses_recursive($model))) {
+            return null;
         }
-
-        return TrinaCrudModel::where('class_name', $classOrModelName)
-            ->orWhere('model_name', $modelName)->exists();
+        return $model;
     }
 
-    public function makeModelNameFromClass(string $className): string
+    public function getRelatedModel(string|Model $model, string $relation): ?Model
     {
-        return Str::lower(Str::replace('\\', '_', $className));
+        if (is_string($model)) {
+            $model = $this->getModel($model);
+        }
+        if (!$model) {
+            return null;
+        }
+        $relatedModelName = $model->$relation()->getQuery()->getModel()->getMorphClass();
+        return $this->getModel($relatedModelName);
     }
 }

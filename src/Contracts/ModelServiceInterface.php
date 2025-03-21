@@ -9,21 +9,42 @@ use Illuminate\Pagination\LengthAwarePaginator;
 
 interface ModelServiceInterface
 {
-    public function getModelRecords(
+    /**
+     * Get all model records
+     * 
+     * @param string $modelName
+     * @param array $attributes
+     * @param array|null $with
+     * @param array $relationAttributes
+     * @param array $filters
+     * @param int $perPage
+     * @return LengthAwarePaginator
+     */
+    public function all(
         string $modelName,
-        array $columns = [],
+        array $attributes = [],
         ?array $with = null,
-        array $relationColumns = [],
+        array $relationAttributes = [],
         array $filters = [],
         int $perPage = 15
     ): LengthAwarePaginator;
 
-    public function getModelRecord(
+    /**
+     * Get a model record by ID
+     * 
+     * @param string $modelName
+     * @param int $id
+     * @param array $attributes
+     * @param array|null $with
+     * @param array $relationAttributes
+     * @return Model
+     */
+    public function find(
         string $modelName,
         int $id,
-        array $columns = [],
+        array $attributes = [],
         ?array $with = null,
-        array $relationColumns = []
+        array $relationAttributes = []
     ): Model;
 
 
@@ -34,7 +55,7 @@ interface ModelServiceInterface
      * @param array $data
      * @return Model
      */
-    public function createModelRecord(string $modelName, array $data): Model;
+    public function create(string $modelName, array $data): Model;
 
     /**
      * Update an existing model record
@@ -44,7 +65,7 @@ interface ModelServiceInterface
      * @param array $data
      * @return Model
      */
-    public function updateModelRecord(string $modelName, int $id, array $data): Model;
+    public function update(string $modelName, int $id, array $data): Model;
 
     /**
      * Delete a model record
@@ -53,7 +74,7 @@ interface ModelServiceInterface
      * @param int $id
      * @return bool
      */
-    public function deleteModelRecord(string $modelName, int $id): bool;
+    public function delete(string $modelName, int $id): bool;
 
 
     /**
@@ -66,80 +87,61 @@ interface ModelServiceInterface
     public function hasModelPermission(string $modelName, string $action): bool;
 
     /**
-     * Check if the user has permission to perform an action on a column
+     * Get the authorized attributes for a model
      * 
      * @param string $modelName
-     * @param string $columnName
      * @param string $action
-     * @return bool
+     * @return array
      */
-    public function hasColumnPermission(string $modelName, string $columnName, string $action): bool;
+    public function getAuthorizedAttributes(string|Model $modelName, string $action): array;
 
     /**
      * Scope the query to only include authorized records
      * 
      * @param Builder|Relation $query
-     * @param string $modelName
+     * @param string|Model $model
+     * @param string $action
      * @return Builder|Relation
      */
-    public function scopeAuthorizedRecords(Builder|Relation $query, string $modelName): Builder|Relation;
-
-    /**
-     * Filter the columns to only include authorized columns
-     * 
-     * @param string $modelName
-     * @param array|null $requestedColumns
-     * @return array
-     */
-    public function filterAuthorizedColumns(string $modelName, ?array $requestedColumns = null): array;
+    public function scopeAuthorizedRecords(Builder|Relation $query, string|Model $model, string $action): Builder|Relation;
 
     /**
      * Load the authorized relations
      * 
-     * @param Builder $query
-     * @param string $modelName
+     * @param Builder|Relation $query
+     * @param string|Model $model
      * @param array $relations
      * @param array $columnsByRelation
-     * @return Builder
+     * @return Builder|Relation
      */
     public function loadAuthorizedRelations(
         Builder|Relation $query,
-        string $modelName,
+        string|Model $model,
         array $relations,
-        array $columnsByRelation = []
+        array $attributesByRelation = []
     ): Builder|Relation;
 
     /**
-     * Apply the authorized filters
+     * Apply filters to a query with permission checks
      * 
-     * @param Builder $query
-     * @param string $modelName
+     * @param Builder|Relation $query
+     * @param string|Model $model
      * @param array $filters
-     * @return Builder
+     * @param string $action
+     * @return Builder|Relation
      */
-    public function applyAuthorizedFilters(Builder|Relation $query, string $modelName, array $filters): Builder|Relation;
+    public function applyAuthorizedFilters(
+        Builder|Relation $query,
+        string|Model $model,
+        array $filters,
+        string $action
+    ): Builder|Relation;
 
     /**
-     * Check if the model exists
+     * Get the model
      * 
-     * @param string $classOrModelName
-     * @return bool
+     * @param string|Model $modelName
+     * @return ?Model
      */
-    public function isModelExists(string $classOrModelName): bool;
-
-    /**
-     * Find the TrinaCrudModel
-     * 
-     * @param string $classOrModelName
-     * @return object|null
-     */
-    public function findTrinaCrudModel(string $classOrModelName): ?object;
-
-    /**
-     * Make the model name from the class name
-     * 
-     * @param string $className
-     * @return string
-     */
-    public function makeModelNameFromClass(string $className): string;
+    public function getModel(string|Model $modelName): ?Model;
 }

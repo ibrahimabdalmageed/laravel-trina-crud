@@ -80,11 +80,11 @@ php artisan trinacrud:sync-models
 Your models are now accessible through the API:
 
 ```http
-GET /api/trina-crud/model/Product         # List all products
-GET /api/trina-crud/model/Product/1       # Get a specific product
-POST /api/trina-crud/model/Product        # Create a new product
-PUT /api/trina-crud/model/Product/1       # Update a product
-DELETE /api/trina-crud/model/Product/1    # Delete a product
+GET /api/trina-crud/crud/Product         # List all products
+GET /api/trina-crud/crud/Product/1       # Get a specific product
+POST /api/trina-crud/crud/Product        # Create a new product
+PUT /api/trina-crud/crud/Product/1       # Update a product
+DELETE /api/trina-crud/crud/Product/1    # Delete a product
 ```
 
 ## Configuration
@@ -118,7 +118,7 @@ You can customize the API endpoint prefix:
 This allows you to change the base URL for all TrinaCrud routes. For example, if you set it to `api/crud`, your endpoints would be:
 
 ```http
-GET /api/crud/model/Product         # Instead of /trina-crud/model/Product
+GET /api/crud/crud/Product         # Instead of /trina-crud/crud/Product
 ```
 
 ### Route Structure
@@ -135,11 +135,11 @@ TrinaCrud organizes routes into two groups:
 
    ```http
    GET /trina-crud/get-schema
-   GET /trina-crud/model/{model}
-   GET /trina-crud/model/{model}/{id}
-   POST /trina-crud/model/{model}
-   PUT /trina-crud/model/{model}/{id}
-   DELETE /trina-crud/model/{model}/{id}
+   GET /trina-crud/crud/{model}
+   GET /trina-crud/crud/{model}/{id}
+   POST /trina-crud/crud/{model}
+   PUT /trina-crud/crud/{model}/{id}
+   DELETE /trina-crud/crud/{model}/{id}
    ```
 
 ### Route Protection
@@ -186,7 +186,7 @@ Control how record ownership is determined:
 ### Listing Records
 
 ```http
-GET /api/trina-crud/model/Product
+GET /api/trina-crud/crud/Product
 ```
 
 Optional parameters:
@@ -200,13 +200,13 @@ Optional parameters:
 Example with filtering:
 
 ```http
-GET /api/trina-crud/model/Product?filters[price][operator]=between&filters[price][value][]=10&filters[price][value][]=100
+GET /api/trina-crud/crud/Product?filters[price][operator]=between&filters[price][value][]=10&filters[price][value][]=100
 ```
 
 ### Getting a Single Record
 
 ```http
-GET /api/trina-crud/model/Product/1
+GET /api/trina-crud/crud/Product/1
 ```
 
 Optional parameters:
@@ -218,7 +218,7 @@ Optional parameters:
 ### Creating a Record
 
 ```http
-POST /api/trina-crud/model/Product
+POST /api/trina-crud/crud/Product
 {
   "name": "New Product",
   "price": 99.99,
@@ -229,7 +229,7 @@ POST /api/trina-crud/model/Product
 ### Updating a Record
 
 ```http
-PUT /api/trina-crud/model/Product/1
+PUT /api/trina-crud/crud/Product/1
 {
   "price": 89.99
 }
@@ -238,7 +238,7 @@ PUT /api/trina-crud/model/Product/1
 ### Deleting a Record
 
 ```http
-DELETE /api/trina-crud/model/Product/1
+DELETE /api/trina-crud/crud/Product/1
 ```
 
 ## Advanced Features
@@ -248,7 +248,7 @@ DELETE /api/trina-crud/model/Product/1
 TrinaCrud supports advanced filtering with various operators:
 
 ```http
-GET /api/trina-crud/model/Product?filters[price][operator]=between&filters[price][value][]=10&filters[price][value][]=100
+GET /api/trina-crud/crud/Product?filters[price][operator]=between&filters[price][value][]=10&filters[price][value][]=100
 ```
 
 Supported operators:
@@ -264,7 +264,7 @@ Supported operators:
 Load related models with your queries:
 
 ```http
-GET /api/trina-crud/model/Product?with=category,tags&relation_columns[category][]=name
+GET /api/trina-crud/crud/Product?with=category,tags&relation_columns[category][]=name
 ```
 
 ### Custom Pagination
@@ -272,7 +272,7 @@ GET /api/trina-crud/model/Product?with=category,tags&relation_columns[category][
 Control the number of records per page:
 
 ```http
-GET /api/trina-crud/model/Product?per_page=50
+GET /api/trina-crud/crud/Product?per_page=50
 ```
 
 ## Security
@@ -314,7 +314,6 @@ If you're using the Spatie Permission package:
 ```php
 // config/trina-crud.php
 'authorization_service' => 'spatie',
-'admin_permission' => 'manage-trina-crud',
 ```
 
 Then create the permission in your application:

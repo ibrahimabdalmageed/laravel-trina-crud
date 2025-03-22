@@ -4,7 +4,6 @@ namespace Trinavo\TrinaCrud\Http\Livewire;
 
 use Livewire\Component;
 use Illuminate\Support\Facades\App;
-use Spatie\Permission\Models\Role;
 use Trinavo\TrinaCrud\Contracts\AuthorizationServiceInterface;
 
 class UserRolesTab extends Component
@@ -51,12 +50,8 @@ class UserRolesTab extends Component
      */
     protected function loadAllRoles()
     {
-        $this->allRoles = Role::all()->map(function ($role) {
-            return [
-                'id' => $role->id,
-                'name' => $role->name
-            ];
-        })->toArray();
+        $authService = App::make(AuthorizationServiceInterface::class);
+        $this->allRoles = $authService->getAllRoles();
     }
 
     /**
@@ -76,8 +71,8 @@ class UserRolesTab extends Component
         $this->userCurrentRoles = [];
 
         if (!empty($this->selectedUserForRoles)) {
-            $userModel = app(config('auth.providers.users.model'));
-            $user = $userModel::find($this->selectedUserForRoles);
+            $authService = App::make(AuthorizationServiceInterface::class);
+            $user = $authService->getUser($this->selectedUserForRoles);
 
             if ($user) {
                 $this->userCurrentRoles = $user->roles->map(function ($role) {
@@ -102,9 +97,9 @@ class UserRolesTab extends Component
             return;
         }
 
-        $userModel = app(config('auth.providers.users.model'));
-        $user = $userModel::find($this->selectedUserForRoles);
-        $role = Role::find($this->selectedRoleToAssign);
+        $authService = App::make(AuthorizationServiceInterface::class);
+        $user = $authService->getUser($this->selectedUserForRoles);
+        $role = $authService->findRole($this->selectedRoleToAssign);
 
         if ($user && $role) {
             try {
@@ -136,9 +131,9 @@ class UserRolesTab extends Component
             return;
         }
 
-        $userModel = app(config('auth.providers.users.model'));
-        $user = $userModel::find($this->selectedUserForRoles);
-        $role = Role::find($roleId);
+        $authService = App::make(AuthorizationServiceInterface::class);
+        $user = $authService->getUser($this->selectedUserForRoles);
+        $role = $authService->findRole($roleId);
 
         if ($user && $role) {
             $user->removeRole($role);
@@ -167,20 +162,15 @@ class UserRolesTab extends Component
     public function updatedSelectedUserForRole()
     {
         if (!empty($this->selectedUserForRole)) {
-            $userModel = app(config('auth.providers.users.model'));
-            $user = $userModel::find($this->selectedUserForRole);
+            $authService = App::make(AuthorizationServiceInterface::class);
+            $user = $authService->getUser($this->selectedUserForRole);
 
             if ($user) {
                 // Get user's current roles
                 $this->selectedRolesForUser = $user->roles->pluck('id')->toArray();
 
                 // Get all available roles
-                $this->availableRolesForUser = Role::all()->map(function ($role) {
-                    return [
-                        'id' => $role->id,
-                        'name' => $role->name,
-                    ];
-                })->toArray();
+                $this->availableRolesForUser = $authService->getAllRoles();
             }
         }
     }
@@ -192,24 +182,17 @@ class UserRolesTab extends Component
             'selectedUserForRole' => 'required',
         ]);
 
-        $userModel = app(config('auth.providers.users.model'));
-        $user = $userModel::find($this->selectedUserForRole);
+        $authService = App::make(AuthorizationServiceInterface::class);
+        $user = $authService->getUser($this->selectedUserForRole);
 
         if ($user) {
             // Sync the selected roles to the user
             $user->syncRoles($this->selectedRolesForUser);
-
-            session()->flash('message', 'User roles updated successfully!');
+            
+            session()->flash('message', 'User roles updated successfully');
             $this->closeUserRoleModal();
-            $this->loadUserRoles();
+        } else {
+            session()->flash('error', 'User not found');
         }
-    }
-
-    /**
-     * Handle the wire:change event from the user select dropdown
-     */
-    public function updateSelectedUser()
-    {
-        $this->loadUserRoles();
     }
 }

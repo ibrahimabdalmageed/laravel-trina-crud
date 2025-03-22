@@ -10,8 +10,7 @@
         @endif
 
         @if (session()->has('error'))
-            <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4"
-                role="alert">
+            <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
                 <span class="block sm:inline">{{ session('error') }}</span>
             </div>
         @endif
@@ -32,12 +31,6 @@
                     </button>
                 </li>
                 <li class="mr-2">
-                    <button wire:click="switchTab('matrix')"
-                        class="inline-block p-4 {{ $activeTab === 'matrix' ? 'border-b-2 border-blue-500 text-blue-600' : 'text-gray-500 hover:text-gray-700' }}">
-                        Permission Matrix
-                    </button>
-                </li>
-                <li class="mr-2">
                     <button wire:click="switchTab('user-roles')"
                         class="inline-block p-4 {{ $activeTab === 'user-roles' ? 'border-b-2 border-blue-500 text-blue-600' : 'text-gray-500 hover:text-gray-700' }}">
                         User Roles
@@ -51,8 +44,6 @@
             @livewire('trina-crud::permissions-tab')
         @elseif ($activeTab === 'roles')
             @livewire('trina-crud::roles-tab')
-        @elseif ($activeTab === 'matrix')
-            @livewire('trina-crud::permission-matrix-tab')
         @elseif ($activeTab === 'user-roles')
             @livewire('trina-crud::user-roles-tab')
         @endif

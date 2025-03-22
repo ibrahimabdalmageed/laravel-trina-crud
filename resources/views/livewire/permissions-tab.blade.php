@@ -1,6 +1,6 @@
 <div>
     <div class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
-        <h2 class="text-xl font-semibold mb-4">Add New Permission</h2>
+        <h2 class="text-xl font-semibold mb-4">Sync Permissions</h2>
 
         @if (session()->has('message'))
             <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4">
@@ -21,52 +21,6 @@
         @endif
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-                <label class="block text-gray-700 text-sm font-bold mb-2" for="model">
-                    Model
-                </label>
-                <select wire:model="selectedModel" id="model"
-                    class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
-                    <option value="">Select a model</option>
-                    @foreach ($models as $model)
-                        <option value="{{ $model }}">{{ $model }}</option>
-                    @endforeach
-                </select>
-                @error('selectedModel')
-                    <span class="text-red-500 text-xs">{{ $message }}</span>
-                @enderror
-            </div>
-
-            <div>
-                <label class="block text-gray-700 text-sm font-bold mb-2">
-                    Actions
-                </label>
-                <div class="flex flex-wrap gap-4">
-                    <label class="inline-flex items-center">
-                        <input type="checkbox" wire:model="selectedActions" value="read"
-                            class="form-checkbox h-5 w-5 text-blue-600">
-                        <span class="ml-2 text-gray-700">Read</span>
-                    </label>
-                    <label class="inline-flex items-center">
-                        <input type="checkbox" wire:model="selectedActions" value="create"
-                            class="form-checkbox h-5 w-5 text-blue-600">
-                        <span class="ml-2 text-gray-700">Create</span>
-                    </label>
-                    <label class="inline-flex items-center">
-                        <input type="checkbox" wire:model="selectedActions" value="update"
-                            class="form-checkbox h-5 w-5 text-blue-600">
-                        <span class="ml-2 text-gray-700">Update</span>
-                    </label>
-                    <label class="inline-flex items-center">
-                        <input type="checkbox" wire:model="selectedActions" value="delete"
-                            class="form-checkbox h-5 w-5 text-blue-600">
-                        <span class="ml-2 text-gray-700">Delete</span>
-                    </label>
-                </div>
-                @error('selectedActions')
-                    <span class="text-red-500 text-xs">{{ $message }}</span>
-                @enderror
-            </div>
 
             <div>
                 <label class="block text-gray-700 text-sm font-bold mb-2">
@@ -104,11 +58,6 @@
             </div>
 
             <div class="flex items-end space-x-2">
-                <button wire:click="addPermission"
-                    class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
-                    Add Permission
-                </button>
-
                 @if ($isRole && !empty($selectedUserId))
                     <button wire:loading.attr="disabled" wire:loading.class="bg-green-500 opacity-50 cursor-not-allowed"
                         wire:click="syncPermissions"

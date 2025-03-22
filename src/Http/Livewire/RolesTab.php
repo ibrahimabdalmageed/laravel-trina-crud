@@ -4,7 +4,6 @@ namespace Trinavo\TrinaCrud\Http\Livewire;
 
 use Livewire\Component;
 use Illuminate\Support\Facades\App;
-use Spatie\Permission\Models\Role;
 use Trinavo\TrinaCrud\Contracts\AuthorizationServiceInterface;
 
 class RolesTab extends Component
@@ -33,8 +32,8 @@ class RolesTab extends Component
 
         // Add permissions count to each role
         foreach ($roles as &$role) {
-            $roleModel = Role::find($role['id']);
-            $role['permissionsCount'] = $roleModel ? $roleModel->permissions->count() : 0;
+            $roleModel = $authService->findRole($role['id']);
+            $role['permissionsCount'] = $roleModel ? count($roleModel->permissions) : 0;
         }
 
         $this->roles = $roles;
@@ -49,7 +48,8 @@ class RolesTab extends Component
 
     public function editRole($roleId)
     {
-        $role = Role::find($roleId);
+        $authService = App::make(AuthorizationServiceInterface::class);
+        $role = $authService->findRole($roleId);
         if ($role) {
             $this->editingRoleId = $roleId;
             $this->roleName = $role->name;
@@ -63,19 +63,25 @@ class RolesTab extends Component
             'roleName' => 'required|string',
         ]);
 
+        $authService = App::make(AuthorizationServiceInterface::class);
+
         if ($this->editingRoleId) {
             // Update existing role
-            $role = Role::find($this->editingRoleId);
+            $role = $authService->findRole($this->editingRoleId);
             if ($role) {
                 $role->name = $this->roleName;
                 $role->save();
                 session()->flash('message', 'Role updated successfully!');
             }
         } else {
-            // Create new role
-            Role::create([
+            // Create new role - we need to add a method to the authorization service
+            // Since we don't have a createRole method in the interface yet, we'll use the existing role model
+            // This should be updated later to use the authorization service
+            $guardName = config('auth.defaults.guard', 'web');
+            $roleClass = config('permission.models.role');
+            $roleClass::create([
                 'name' => $this->roleName,
-                'guard_name' => 'web'
+                'guard_name' => $guardName
             ]);
             session()->flash('message', 'Role created successfully!');
         }
@@ -87,7 +93,8 @@ class RolesTab extends Component
 
     public function deleteRole($roleId)
     {
-        $role = Role::find($roleId);
+        $authService = App::make(AuthorizationServiceInterface::class);
+        $role = $authService->findRole($roleId);
         if ($role) {
             // Remove all permissions from this role first
             $role->syncPermissions([]);

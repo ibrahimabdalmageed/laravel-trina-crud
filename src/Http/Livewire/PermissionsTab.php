@@ -7,7 +7,6 @@ use Illuminate\Support\Facades\App;
 use PhpParser\Node\Expr\Cast\String_;
 use Trinavo\TrinaCrud\Enums\CrudAction;
 use Trinavo\TrinaCrud\Contracts\AuthorizationServiceInterface;
-use Spatie\Permission\Models\Role;
 use Trinavo\TrinaCrud\Contracts\ModelServiceInterface;
 use Trinavo\TrinaCrud\Models\ModelSchema;
 
@@ -59,8 +58,9 @@ class PermissionsTab extends Component
 
         // Filter rules by role if a role is selected
         if (!empty($this->filterByRoleId)) {
-            $roleModel = Role::find($this->filterByRoleId);
-            $roleName = $roleModel ? $roleModel->name : '';
+            $authService = App::make(AuthorizationServiceInterface::class);
+            $role = $authService->findRole($this->filterByRoleId);
+            $roleName = $role ? $role->name : '';
 
             // Filter the rules to only show those for the selected role
             $filteredRules = collect($this->rules)->map(function ($actions, $model) use ($roleName) {
@@ -121,8 +121,8 @@ class PermissionsTab extends Component
 
         // Add permissions count to each role
         foreach ($roles as &$role) {
-            $roleModel = Role::find($role['id']);
-            $role['permissionsCount'] = $roleModel ? $roleModel->permissions->count() : 0;
+            $roleModel = $authService->findRole($role['id']);
+            $role['permissionsCount'] = $roleModel ? count($roleModel->permissions) : 0;
         }
 
         $this->roles = $roles;
@@ -216,36 +216,39 @@ class PermissionsTab extends Component
     {
         /** @var AuthorizationServiceInterface $authService */
         $authService = App::make(AuthorizationServiceInterface::class);
+        $crudAction = CrudAction::from($action);
 
         if ($isRole) {
+            // Check if the role exists
+            $role = $authService->findRole($entityId);
+            if (!$role) {
+                session()->flash('error', 'Role not found');
+                return;
+            }
 
-            if ($authService->hasModelPermission($model, CrudAction::from($action))) {
-                $authService->setModelRolePermission($model, CrudAction::from($action), $entityId, false);
-                session()->flash('message', "Permission '$action' removed from " . class_basename($model));
+            // Check if permission exists and toggle it
+            if ($role->hasPermissionTo($crudAction->toModelPermissionString($model))) {
+                $authService->setModelRolePermission($model, $crudAction, $entityId, false);
+                session()->flash('message', "Permission '$action' removed from role for " . class_basename($model));
             } else {
-                // Add permission
-                $authService->setModelRolePermission($model, CrudAction::from($action), $entityId, true);
-                session()->flash('message', "Permission '$action' added to " . class_basename($model));
+                $authService->setModelRolePermission($model, $crudAction, $entityId, true);
+                session()->flash('message', "Permission '$action' added to role for " . class_basename($model));
             }
         } else {
-            $userModel = app(config('auth.providers.users.model'));
-            $user = $userModel::find($entityId);
+            // Get user through the auth service
+            $user = $authService->getUser($entityId);
             if (!$user) {
                 session()->flash('error', 'User not found');
                 return;
             }
 
-            $permissionName = "$action $model";
-
-            if ($authService->hasModelPermission($model, CrudAction::from($action))) {
-                // Remove permission
-                $authService->setModelUserPermission($model, CrudAction::from($action), $user->id, false);
-                session()->flash('message', "Permission '$action' removed from " . class_basename($model));
+            // Check if permission exists and toggle it
+            if ($user->hasPermissionTo($crudAction->toModelPermissionString($model))) {
+                $authService->setModelUserPermission($model, $crudAction, $entityId, false);
+                session()->flash('message', "Permission '$action' removed from user for " . class_basename($model));
             } else {
-                // Add permission
-                $action = CrudAction::from($action);
-                $authService->setModelUserPermission($model, $action, $user->id, true);
-                session()->flash('message', "Permission '$action' added to " . class_basename($model));
+                $authService->setModelUserPermission($model, $crudAction, $entityId, true);
+                session()->flash('message', "Permission '$action' added to user for " . class_basename($model));
             }
         }
 

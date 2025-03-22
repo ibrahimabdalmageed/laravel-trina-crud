@@ -41,7 +41,6 @@ class TrinaCrudServiceProvider extends ServiceProvider
             Livewire::component('trina-crud::permissions-manager', PermissionsManager::class);
             Livewire::component('trina-crud::permissions-tab', PermissionsTab::class);
             Livewire::component('trina-crud::roles-tab', RolesTab::class);
-            Livewire::component('trina-crud::permission-matrix-tab', PermissionMatrixTab::class);
             Livewire::component('trina-crud::user-roles-tab', UserRolesTab::class);
         }
 

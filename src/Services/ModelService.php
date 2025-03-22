@@ -169,6 +169,15 @@ class ModelService implements ModelServiceInterface
             throw new NotFoundHttpException('Model not found');
         }
 
+        // Validate the data using the model's validation rules
+        $rules = $model->getCrudRules(CrudAction::CREATE);
+        if (!empty($rules)) {
+            $validator = \Illuminate\Support\Facades\Validator::make($data, $rules);
+            if ($validator->fails()) {
+                throw new \Illuminate\Validation\ValidationException($validator);
+            }
+        }
+
         // Create a new record
         $record = $model->create($data);
 
@@ -212,6 +221,15 @@ class ModelService implements ModelServiceInterface
 
         if (!$record) {
             throw new NotFoundHttpException('Record not found');
+        }
+
+        // Validate the data using the model's validation rules
+        $rules = $model->getCrudRules(CrudAction::UPDATE);
+        if (!empty($rules)) {
+            $validator = \Illuminate\Support\Facades\Validator::make($data, $rules);
+            if ($validator->fails()) {
+                throw new \Illuminate\Validation\ValidationException($validator);
+            }
         }
 
         // Update the record

@@ -15,6 +15,7 @@ A powerful Laravel package that automatically scans your models, generates API e
 - **Relationship Support**: Load and filter by model relationships
 - **Record Ownership**: Control which records users can access based on ownership
 - **Highly Configurable**: Customize behavior through simple configuration options
+- **Validation**: Validate your model data during CRUD operations
 
 ## Installation
 
@@ -54,6 +55,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Trinavo\TrinaCrud\Traits\HasCrud;
+use Trinavo\TrinaCrud\Enums\CrudAction;
 
 class Product extends Model
 {
@@ -64,6 +66,34 @@ class Product extends Model
         'price',
         'description',
     ];
+    
+    /**
+     * Define validation rules for CRUD operations
+     * 
+     * @param CrudAction $action The CRUD action (CREATE, UPDATE, etc.)
+     * @return array
+     */
+    public function getCrudRules(CrudAction $action): array
+    {
+        // You can define different rules based on the action
+        if ($action === CrudAction::CREATE) {
+            return [
+                'name' => 'required|string|max:255',
+                'price' => 'required|numeric|min:0',
+                'description' => 'nullable|string',
+            ];
+        }
+        
+        if ($action === CrudAction::UPDATE) {
+            return [
+                'name' => 'sometimes|string|max:255',
+                'price' => 'sometimes|numeric|min:0',
+                'description' => 'nullable|string',
+            ];
+        }
+        
+        return [];
+    }
 }
 ```
 
@@ -274,6 +304,51 @@ Control the number of records per page:
 ```http
 GET /api/trina-crud/crud/Product?per_page=50
 ```
+
+### Validation
+
+TrinaCrud provides a simple way to validate your model data during CRUD operations:
+
+1. Override the `getCrudRules` method in your model to define validation rules:
+
+```php
+use Trinavo\TrinaCrud\Enums\CrudAction;
+
+public function getCrudRules(CrudAction $action): array
+{
+    // Return different rules based on the action
+    if ($action === CrudAction::CREATE) {
+        return [
+            'name' => 'required|string|max:255',
+            'price' => 'required|numeric|min:0',
+        ];
+    }
+    
+    if ($action === CrudAction::UPDATE) {
+        return [
+            'name' => 'sometimes|string|max:255',
+            'price' => 'sometimes|numeric|min:0',
+        ];
+    }
+    
+    return [];
+}
+```
+
+2. The validation is automatically applied when creating or updating records
+3. Validation errors are returned as a JSON response with a 422 status code:
+
+```json
+{
+    "error": "Validation failed",
+    "errors": {
+        "name": ["The name field is required."],
+        "price": ["The price must be at least 0."]
+    }
+}
+```
+
+This feature uses Laravel's built-in validation system, so you can use all the standard Laravel validation rules.
 
 ## Security
 

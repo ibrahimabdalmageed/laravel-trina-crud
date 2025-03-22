@@ -5,6 +5,7 @@ namespace Trinavo\TrinaCrud\Http\Controllers;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
+use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Trinavo\TrinaCrud\Contracts\ModelServiceInterface;
 use Trinavo\TrinaCrud\Http\Requests\ModelsController\ValidateTrinaCrudModelCreateRequest;
@@ -108,6 +109,11 @@ class TrinaCrudModelController extends Controller
             return $this->modelService->create($model, $data);
         } catch (NotFoundHttpException $e) {
             return response()->json(['error' => $e->getMessage()], 404);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'error' => 'Validation failed',
+                'errors' => $e->errors()
+            ], 422);
         } catch (Exception $e) {
             return response()->json(['error' => 'An error occurred: ' . $e->getMessage()], 500);
         }
@@ -133,6 +139,11 @@ class TrinaCrudModelController extends Controller
             return $this->modelService->update($model, $id, $data);
         } catch (NotFoundHttpException $e) {
             return response()->json(['error' => $e->getMessage()], 404);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'error' => 'Validation failed',
+                'errors' => $e->errors()
+            ], 422);
         } catch (Exception $e) {
             return response()->json(['error' => 'An error occurred: ' . $e->getMessage()], 500);
         }

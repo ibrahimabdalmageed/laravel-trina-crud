@@ -27,4 +27,17 @@ trait HasCrud
 
         return $filteredFillable;
     }
+
+    /**
+     * Get the validation rules for a specific CRUD action
+     * 
+     * @param CrudAction $action The CRUD action
+     * @return array
+     */
+    public function getCrudRules(CrudAction $action): array
+    {
+        // Default implementation returns an empty array
+        // Models should override this method to provide their specific validation rules
+        return [];
+    }
 }

@@ -39,21 +39,7 @@ return [
     |
     */
     'middleware' => [
-        // Default middleware for all TrinaCrud routes
-        // Examples: 'api', 'auth:api', 'auth:sanctum'
+        'auth:sanctum',
     ],
 
-    /*
-    |--------------------------------------------------------------------------
-    | Admin Route Middleware
-    |--------------------------------------------------------------------------
-    |
-    | These middleware will be assigned to administrative TrinaCrud routes
-    | such as sync-models which should be restricted to administrators.
-    |
-    */
-    'admin_middleware' => [
-        // Middleware for admin-only routes like sync-models
-        // Examples: 'auth:api', 'can:manage-trina-crud'
-    ],
 ];

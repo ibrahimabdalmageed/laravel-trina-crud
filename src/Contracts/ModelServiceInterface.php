@@ -168,7 +168,7 @@ interface ModelServiceInterface
 
 
     /**
-     * Filter columns based on user permissions
+     * Filter attributes based on user permissions
      * 
      * @param string|Model $model
      * @param CrudAction $action

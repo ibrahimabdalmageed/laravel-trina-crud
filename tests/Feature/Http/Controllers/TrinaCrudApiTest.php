@@ -60,7 +60,7 @@ class TrinaCrudApiTest extends TrinaTestCase
     }
 
     /**
-     * Test listing model data with specific columns
+     * Test listing model data with specific attributes
      */
     public function testListModelDataWithColumns()
     {
@@ -68,8 +68,8 @@ class TrinaCrudApiTest extends TrinaTestCase
         app('product_model')->create(['name' => 'Product 1', 'price' => 100, 'description' => 'Description 1']);
         app('product_model')->create(['name' => 'Product 2', 'price' => 200, 'description' => 'Description 2']);
 
-        // Make API request with columns parameter
-        $response = $this->getJson('/api/crud/product_model?columns[]=name&columns[]=price');
+        // Make API request with attributes parameter
+        $response = $this->getJson('/api/crud/product_model?attributes[]=name&attributes[]=price');
 
         // Assert response
         $response->assertStatus(200)
@@ -80,7 +80,7 @@ class TrinaCrudApiTest extends TrinaTestCase
                 ]
             ]);
 
-        // Ensure only requested columns are returned
+        // Ensure only requested attributes are returned
         $response->assertJsonMissing(['description']);
     }
 

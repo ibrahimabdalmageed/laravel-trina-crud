@@ -35,7 +35,7 @@ class TrinaCrudModelController extends Controller
         ValidateTrinaCrudModelIndexRequest $request
     ) {
         try {
-            $attributes = $request->input('columns', []);
+            $attributes = $request->input('attributes', []);
             $with = $request->has('with') ?
                 (is_array($request->with) ? $request->with : explode(',', $request->with)) :
                 null;
@@ -71,7 +71,7 @@ class TrinaCrudModelController extends Controller
         $id
     ) {
         try {
-            $attributes = $request->input('columns', []);
+            $attributes = $request->input('attributes', []);
             $with = $request->has('with') ?
                 (is_array($request->with) ? $request->with : explode(',', $request->with)) :
                 null;

@@ -221,7 +221,7 @@ GET /api/trina-crud/crud/Product
 
 Optional parameters:
 
-- `columns[]`: Specific columns to retrieve
+- `attributes[]`: Specific attributes to retrieve
 - `with`: Related models to include (comma-separated or array)
 - `relation_columns`: Columns to select for each relationship
 - `filters`: Query filters
@@ -241,7 +241,7 @@ GET /api/trina-crud/crud/Product/1
 
 Optional parameters:
 
-- `columns[]`: Specific columns to retrieve
+- `attributes[]`: Specific attributes to retrieve
 - `with`: Related models to include
 - `relation_columns`: Columns to select for each relationship
 
@@ -369,7 +369,7 @@ Gate::define('create-Product', function ($user) {
 
 ### Column-Level Permissions
 
-Control access to specific columns:
+Control access to specific attributes:
 
 ```php
 // In your AuthServiceProvider

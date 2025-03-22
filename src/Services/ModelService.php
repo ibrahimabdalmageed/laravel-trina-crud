@@ -34,9 +34,9 @@ class ModelService implements ModelServiceInterface
      * Get a paginated list of model records with filtering and authorization
      *
      * @param string $modelName The name of the model
-     * @param array $attributes The columns to select
+     * @param array $attributes The attributes to select
      * @param array|null $with The relations to load
-     * @param array $relationAttributes The columns to select for each relation
+     * @param array $relationAttributes The attributes to select for each relation
      * @param array $filters The filters to apply
      * @param int $perPage The number of records per page
      * @return LengthAwarePaginator
@@ -68,10 +68,10 @@ class ModelService implements ModelServiceInterface
         // Apply ownership filtering
         $query = $this->scopeAuthorizedRecords($query, $model, CrudAction::READ);
 
-        // Filter columns based on permissions
+        // Filter attributes based on permissions
         $authorizedAttributes  = $this->filterAuthorizedAttributes($model, CrudAction::READ, $attributes);
 
-        // Select only authorized columns if specified
+        // Select only authorized attributes if specified
         if (!empty($authorizedAttributes)) {
             $query->select($authorizedAttributes);
         }
@@ -93,9 +93,9 @@ class ModelService implements ModelServiceInterface
      *
      * @param string $modelName The name of the model
      * @param int $id The ID of the record
-     * @param array $attributes The columns to select
+     * @param array $attributes The attributes to select
      * @param array|null $with The relations to load
-     * @param array $relationAttributes The columns to select for each relation
+     * @param array $relationAttributes The attributes to select for each relation
      * @return Model
      * @throws NotFoundHttpException
      */
@@ -124,10 +124,10 @@ class ModelService implements ModelServiceInterface
         // Apply ownership filtering
         $query = $this->scopeAuthorizedRecords($query, $model, CrudAction::READ);
 
-        // Filter columns based on permissions
+        // Filter attributes based on permissions
         $authorizedAttributes  = $this->filterAuthorizedAttributes($model, CrudAction::READ, $attributes);
 
-        // Select only authorized columns if specified
+        // Select only authorized attributes if specified
         if (!empty($authorizedAttributes)) {
             $query->select($authorizedAttributes);
         }
@@ -314,7 +314,7 @@ class ModelService implements ModelServiceInterface
     }
 
     /**
-     * Filter columns based on user permissions
+     * Filter attributes based on user permissions
      *
      * @param string|Model $model
      * @param CrudAction $action
@@ -336,7 +336,7 @@ class ModelService implements ModelServiceInterface
      * @param Builder $query The query builder
      * @param string $modelName The name of the model
      * @param array $relations The relations to load
-     * @param array $attributesByRelation Optional columns to select for each relation
+     * @param array $attributesByRelation Optional attributes to select for each relation
      * @param CrudAction $action The action (view, update)
      * @return Builder|Relation
      */
@@ -361,7 +361,7 @@ class ModelService implements ModelServiceInterface
                 continue;
             }
 
-            // Get authorized columns for the relation
+            // Get authorized attributes for the relation
             $attributes = $attributesByRelation[$relation] ?? null;
             $authorizedAttributes  = $this->filterAuthorizedAttributes($relatedModel, $action, $attributes);
 
@@ -370,7 +370,7 @@ class ModelService implements ModelServiceInterface
                 // Apply ownership filter
                 $this->scopeAuthorizedRecords($q, $relatedModel, $action);
 
-                // Select only authorized columns if specified
+                // Select only authorized attributes if specified
                 if (!empty($authorizedAttributes)) {
                     // Always include the primary key
                     $authorizedAttributes[] = 'id';

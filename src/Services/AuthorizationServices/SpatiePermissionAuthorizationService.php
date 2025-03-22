@@ -3,6 +3,7 @@
 namespace Trinavo\TrinaCrud\Services\AuthorizationServices;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Foundation\Auth\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Config;
 use Trinavo\TrinaCrud\Contracts\AuthorizationServiceInterface;
@@ -18,9 +19,9 @@ class SpatiePermissionAuthorizationService implements AuthorizationServiceInterf
      * 
      * @return ?Model
      */
-    public function getUser(): ?Model
+    public function getUser(?int $userId = null): ?Model
     {
-        return Auth::user();
+        return $userId ? User::find($userId) : Auth::user();
     }
 
     /**
@@ -68,9 +69,31 @@ class SpatiePermissionAuthorizationService implements AuthorizationServiceInterf
     public function hasModelPermission(string $modelName, CrudAction $action): bool
     {
         $permissionName = $action->toModelPermissionString($modelName);
-
         // Check if user has the permission
         return $this->hasPermissionTo($permissionName);
+    }
+
+
+    public function setModelRolePermission(string $modelName, CrudAction $action, int $roleId, bool $enable): void
+    {
+        $permissionName = $action->toModelPermissionString($modelName);
+        $role = Role::find($roleId);
+        if ($enable) {
+            $role->givePermissionTo($permissionName);
+        } else {
+            $role->revokePermissionTo($permissionName);
+        }
+    }
+
+    public function setModelUserPermission(string $modelName, CrudAction $action, int $userId, bool $enable): void
+    {
+        $permissionName = $action->toModelPermissionString($modelName);
+        $user = $this->getUser($userId);
+        if ($enable) {
+            $user->givePermissionTo($permissionName);
+        } else {
+            $user->revokePermissionTo($permissionName);
+        }
     }
 
     /**
@@ -193,5 +216,10 @@ class SpatiePermissionAuthorizationService implements AuthorizationServiceInterf
     protected function getUserModelClass(): string
     {
         return Config::get('auth.providers.users.model', '\App\Models\User');
+    }
+
+    public function findRole(int $roleId)
+    {
+        return Role::find($roleId);
     }
 }

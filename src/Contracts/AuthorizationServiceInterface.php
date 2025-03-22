@@ -27,6 +27,27 @@ interface AuthorizationServiceInterface
     public function hasModelPermission(string $modelName, CrudAction $action): bool;
 
 
+
+    /**
+     * Set permission for a role to perform an action on a model
+     * 
+     * @param string $modelName The name of the model
+     * @param CrudAction $action The action (view, create, update, delete)
+     * @param int $roleId The ID of the role
+     * @param bool $enable Whether to grant or revoke permission
+     */
+    public function setModelRolePermission(string $modelName, CrudAction $action, int $roleId, bool $enable): void;
+
+    /**
+     * Set permission for a user to perform an action on a model
+     * 
+     * @param string $modelName The name of the model
+     * @param CrudAction $action The action (view, create, update, delete)
+     * @param int $userId The ID of the user
+     * @param bool $enable Whether to grant or revoke permission
+     */
+    public function setModelUserPermission(string $modelName, CrudAction $action, int $userId, bool $enable): void;
+
     /**
      * Get the user model
      * 
@@ -43,14 +64,14 @@ interface AuthorizationServiceInterface
      * @return bool
      */
     public function isAttributeAuthorized(Model $model, string $attribute, CrudAction $action): bool;
-    
+
     /**
      * Get all permission rules for models
      * 
      * @return array
      */
     public function getRules(): array;
-    
+
     /**
      * Add a permission rule
      * 
@@ -61,7 +82,7 @@ interface AuthorizationServiceInterface
      * @return bool Success status
      */
     public function addRule(string $modelName, CrudAction $action, $userId, bool $isRole = false): bool;
-    
+
     /**
      * Delete a permission rule
      * 
@@ -69,11 +90,19 @@ interface AuthorizationServiceInterface
      * @return bool Success status
      */
     public function deleteRule(string $permissionName): bool;
-    
+
     /**
      * Get all users in the system
      * 
      * @return array
      */
     public function getAllUsers(): array;
+
+
+    /**
+     * Find a role by ID
+     * 
+     * @param int $roleId The ID of the role
+     */
+    public function findRole(int $roleId);
 }

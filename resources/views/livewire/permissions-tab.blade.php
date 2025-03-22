@@ -160,64 +160,245 @@
         </div>
 
         @if (count($filteredRules) > 0)
-            @foreach ($filteredRules as $model => $actions)
-                <div class="mb-6 border rounded p-4">
-                    <h3 class="text-lg font-medium mb-4">{{ $model }}</h3>
+            <div class="overflow-x-auto">
+                <table class="min-w-full bg-white">
+                    <thead>
+                        <tr>
+                            <th
+                                class="py-2 px-4 border-b border-gray-200 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Model
+                            </th>
+                            <th
+                                class="py-2 px-4 border-b border-gray-200 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Role/User
+                            </th>
+                            <th
+                                class="py-2 px-4 border-b border-gray-200 bg-gray-50 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Read
+                            </th>
+                            <th
+                                class="py-2 px-4 border-b border-gray-200 bg-gray-50 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Create
+                            </th>
+                            <th
+                                class="py-2 px-4 border-b border-gray-200 bg-gray-50 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Update
+                            </th>
+                            <th
+                                class="py-2 px-4 border-b border-gray-200 bg-gray-50 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Delete
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach ($filteredRules as $model => $actions)
+                            @php
+                                // Get all unique roles and users for this model
+                                $allRolesUsers = [];
 
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full bg-white">
-                            <thead>
+                                // If filtering by role, only show that role
+                                if (!empty($filterByRoleId)) {
+                                    $role = collect($roles)->firstWhere('id', $filterByRoleId);
+                                    if ($role) {
+                                        $allRolesUsers[$role['name']] = [
+                                            'type' => 'role',
+                                            'name' => $role['name'],
+                                            'id' => $role['id'],
+                                        ];
+                                    }
+                                }
+                                // If filtering by user, only show that user
+                                elseif (!empty($filterByUserId)) {
+                                    $user = collect($users)->firstWhere('id', $filterByUserId);
+                                    if ($user) {
+                                        $allRolesUsers[$user['name']] = [
+                                            'type' => 'user',
+                                            'name' => $user['name'],
+                                            'id' => $user['id'],
+                                        ];
+                                    }
+                                }
+                                // Otherwise, get all roles and users for this model
+                                else {
+                                    foreach ($actions as $actionDetails) {
+                                        foreach ($actionDetails['roles'] as $roleName) {
+                                            $role = collect($roles)->firstWhere('name', $roleName);
+                                            if ($role && !isset($allRolesUsers[$roleName])) {
+                                                $allRolesUsers[$roleName] = [
+                                                    'type' => 'role',
+                                                    'name' => $roleName,
+                                                    'id' => $role['id'],
+                                                ];
+                                            }
+                                        }
+                                        foreach ($actionDetails['users'] as $userName) {
+                                            $user = collect($users)->firstWhere('name', $userName);
+                                            if ($user && !isset($allRolesUsers[$userName])) {
+                                                $allRolesUsers[$userName] = [
+                                                    'type' => 'user',
+                                                    'name' => $userName,
+                                                    'id' => $user['id'],
+                                                ];
+                                            }
+                                        }
+                                    }
+                                }
+                            @endphp
+
+                            @foreach ($allRolesUsers as $roleUser)
                                 <tr>
-                                    <th
-                                        class="py-2 px-4 border-b border-gray-200 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Permission</th>
-                                    <th
-                                        class="py-2 px-4 border-b border-gray-200 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach ($actions as $action => $details)
-                                    <tr>
-                                        <td class="py-2 px-4 border-b border-gray-200">
-                                            <div class="flex items-center">
-                                                <span class="font-medium mr-2">{{ $model }}</span>
-                                                <span class="text-gray-600 mr-2">-</span>
-                                                <span class="text-blue-600">{{ ucfirst($action) }}</span>
-
-                                                @if (count($details['roles']) > 0)
-                                                    <span class="mx-2 text-gray-400">|</span>
-                                                    <span
-                                                        class="text-gray-600">{{ implode(', ', $details['roles']) }}</span>
-                                                @endif
-
-                                                @if (count($details['users']) > 0)
-                                                    <span class="mx-2 text-gray-400">|</span>
-                                                    <span
-                                                        class="text-gray-600">{{ implode(', ', $details['users']) }}</span>
-                                                @endif
-                                            </div>
+                                    @if ($loop->first)
+                                        <td class="py-2 px-4 border-b border-gray-200 font-medium"
+                                            rowspan="{{ count($allRolesUsers) }}">
+                                            {{ $model }}
                                         </td>
-                                        <td class="py-2 px-4 border-b border-gray-200">
-                                            <button wire:click="deletePermission('{{ $details['name'] }}')"
-                                                class="text-red-600 hover:text-red-800">
-                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5"
+                                    @endif
+                                    <td class="py-2 px-4 border-b border-gray-200">
+                                        <span
+                                            class="{{ $roleUser['type'] === 'role' ? 'text-blue-600' : 'text-green-600' }}">
+                                            {{ $roleUser['name'] }}
+                                            <span
+                                                class="text-xs text-gray-500">({{ ucfirst($roleUser['type']) }})</span>
+                                        </span>
+                                    </td>
+
+                                    <!-- Read Permission -->
+                                    <td class="py-2 px-4 border-b border-gray-200 text-center">
+                                        @php
+                                            $hasPermission =
+                                                isset($actions['read']) &&
+                                                (($roleUser['type'] === 'role' &&
+                                                    in_array($roleUser['name'], $actions['read']['roles'])) ||
+                                                    ($roleUser['type'] === 'user' &&
+                                                        in_array($roleUser['name'], $actions['read']['users'])));
+                                        @endphp
+
+                                        <button
+                                            wire:click="togglePermission('{{ $model }}', 'read', {{ $roleUser['id'] }}, {{ $roleUser['type'] === 'role' ? 1 : 0 }})"
+                                            class="{{ $hasPermission ? 'text-green-600 hover:text-green-800' : 'text-red-600 hover:text-red-800' }}">
+                                            @if ($hasPermission)
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline"
                                                     viewBox="0 0 20 20" fill="currentColor">
                                                     <path fill-rule="evenodd"
-                                                        d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"
+                                                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
                                                         clip-rule="evenodd" />
                                                 </svg>
-                                            </button>
-                                        </td>
-                                    </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            @endforeach
+                                            @else
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline"
+                                                    viewBox="0 0 20 20" fill="currentColor">
+                                                    <path fill-rule="evenodd"
+                                                        d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                                                        clip-rule="evenodd" />
+                                                </svg>
+                                            @endif
+                                        </button>
+                                    </td>
+
+                                    <!-- Create Permission -->
+                                    <td class="py-2 px-4 border-b border-gray-200 text-center">
+                                        @php
+                                            $hasPermission =
+                                                isset($actions['create']) &&
+                                                (($roleUser['type'] === 'role' &&
+                                                    in_array($roleUser['name'], $actions['create']['roles'])) ||
+                                                    ($roleUser['type'] === 'user' &&
+                                                        in_array($roleUser['name'], $actions['create']['users'])));
+                                        @endphp
+
+                                        <button
+                                            wire:click="togglePermission('{{ $model }}', 'create', {{ $roleUser['id'] }}, {{ $roleUser['type'] === 'role' ? 1 : 0 }})"
+                                            class="{{ $hasPermission ? 'text-green-600 hover:text-green-800' : 'text-red-600 hover:text-red-800' }}">
+                                            @if ($hasPermission)
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline"
+                                                    viewBox="0 0 20 20" fill="currentColor">
+                                                    <path fill-rule="evenodd"
+                                                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                                        clip-rule="evenodd" />
+                                                </svg>
+                                            @else
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline"
+                                                    viewBox="0 0 20 20" fill="currentColor">
+                                                    <path fill-rule="evenodd"
+                                                        d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                                                        clip-rule="evenodd" />
+                                                </svg>
+                                            @endif
+                                        </button>
+                                    </td>
+
+                                    <!-- Update Permission -->
+                                    <td class="py-2 px-4 border-b border-gray-200 text-center">
+                                        @php
+                                            $hasPermission =
+                                                isset($actions['update']) &&
+                                                (($roleUser['type'] === 'role' &&
+                                                    in_array($roleUser['name'], $actions['update']['roles'])) ||
+                                                    ($roleUser['type'] === 'user' &&
+                                                        in_array($roleUser['name'], $actions['update']['users'])));
+                                        @endphp
+
+                                        <button
+                                            wire:click="togglePermission('{{ $model }}', 'update', {{ $roleUser['id'] }}, {{ $roleUser['type'] === 'role' ? 1 : 0 }})"
+                                            class="{{ $hasPermission ? 'text-green-600 hover:text-green-800' : 'text-red-600 hover:text-red-800' }}">
+                                            @if ($hasPermission)
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline"
+                                                    viewBox="0 0 20 20" fill="currentColor">
+                                                    <path fill-rule="evenodd"
+                                                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                                        clip-rule="evenodd" />
+                                                </svg>
+                                            @else
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline"
+                                                    viewBox="0 0 20 20" fill="currentColor">
+                                                    <path fill-rule="evenodd"
+                                                        d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                                                        clip-rule="evenodd" />
+                                                </svg>
+                                            @endif
+                                        </button>
+                                    </td>
+
+                                    <!-- Delete Permission -->
+                                    <td class="py-2 px-4 border-b border-gray-200 text-center">
+                                        @php
+                                            $hasPermission =
+                                                isset($actions['delete']) &&
+                                                (($roleUser['type'] === 'role' &&
+                                                    in_array($roleUser['name'], $actions['delete']['roles'])) ||
+                                                    ($roleUser['type'] === 'user' &&
+                                                        in_array($roleUser['name'], $actions['delete']['users'])));
+                                        @endphp
+
+                                        <button
+                                            wire:click="togglePermission('{{ $model }}', 'delete', {{ $roleUser['id'] }}, {{ $roleUser['type'] === 'role' ? 1 : 0 }})"
+                                            class="{{ $hasPermission ? 'text-green-600 hover:text-green-800' : 'text-red-600 hover:text-red-800' }}">
+                                            @if ($hasPermission)
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline"
+                                                    viewBox="0 0 20 20" fill="currentColor">
+                                                    <path fill-rule="evenodd"
+                                                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                                        clip-rule="evenodd" />
+                                                </svg>
+                                            @else
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline"
+                                                    viewBox="0 0 20 20" fill="currentColor">
+                                                    <path fill-rule="evenodd"
+                                                        d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                                                        clip-rule="evenodd" />
+                                                </svg>
+                                            @endif
+                                        </button>
+                                    </td>
+                                </tr>
+                            @endforeach
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
         @else
-            <p class="text-gray-500">No permissions match the current filters.</p>
+            <div class="bg-gray-100 p-4 rounded text-center">
+                No permissions found. Add some permissions using the form above.
+            </div>
         @endif
     </div>
 </div>

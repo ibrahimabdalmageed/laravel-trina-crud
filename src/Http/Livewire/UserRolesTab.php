@@ -11,14 +11,12 @@ class UserRolesTab extends Component
 {
     public $users = [];
     public $allRoles = [];
-    
+
     // User-role management properties
     public $selectedUserForRoles = '';
     public $userCurrentRoles = [];
     public $selectedRoleToAssign = '';
 
-    // User-role assignment modal properties
-    public $showUserRoleModal = false;
     public $selectedUserForRole = '';
     public $selectedRolesForUser = [];
     public $availableRolesForUser = [];
@@ -64,10 +62,11 @@ class UserRolesTab extends Component
     /**
      * Load current roles for the selected user
      */
-    public function updatedSelectedUserForRoles()
+    public function updatedSelectedUserForRoles($value)
     {
         $this->loadUserRoles();
     }
+
 
     /**
      * Load the current roles for the selected user
@@ -151,7 +150,6 @@ class UserRolesTab extends Component
     // Method to show the user-role assignment modal
     public function showUserRoleAssignmentModal()
     {
-        $this->showUserRoleModal = true;
         $this->selectedUserForRole = '';
         $this->selectedRolesForUser = [];
         $this->availableRolesForUser = [];
@@ -160,7 +158,6 @@ class UserRolesTab extends Component
     // Method to close the user-role assignment modal
     public function closeUserRoleModal()
     {
-        $this->showUserRoleModal = false;
         $this->selectedUserForRole = '';
         $this->selectedRolesForUser = [];
         $this->availableRolesForUser = [];
@@ -206,5 +203,13 @@ class UserRolesTab extends Component
             $this->closeUserRoleModal();
             $this->loadUserRoles();
         }
+    }
+
+    /**
+     * Handle the wire:change event from the user select dropdown
+     */
+    public function updateSelectedUser()
+    {
+        $this->loadUserRoles();
     }
 }

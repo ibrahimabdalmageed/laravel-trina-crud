@@ -3,9 +3,11 @@
 namespace Trinavo\TrinaCrud\Providers;
 
 use Illuminate\Support\ServiceProvider;
+use Livewire\Livewire;
 use Trinavo\TrinaCrud\Contracts\AuthorizationServiceInterface;
 use Trinavo\TrinaCrud\Contracts\ModelServiceInterface;
 use Trinavo\TrinaCrud\Contracts\OwnershipServiceInterface;
+use Trinavo\TrinaCrud\Http\Livewire\PermissionsManager;
 use Trinavo\TrinaCrud\Http\Middleware\TrinaCrudAdminMiddleware;
 use Trinavo\TrinaCrud\Services\AuthorizationServices\AllowAllAuthorizationService;
 use Trinavo\TrinaCrud\Services\AuthorizationServices\SpatiePermissionAuthorizationService;
@@ -22,13 +24,23 @@ class TrinaCrudServiceProvider extends ServiceProvider
     {
         // Load routes
         $this->loadRoutesFrom(__DIR__ . '/../../routes/api.php');
+        $this->loadRoutesFrom(__DIR__ . '/../../routes/web.php');
+
+        // Load views
+        $this->loadViewsFrom(__DIR__ . '/../../resources/views', 'trina-crud');
 
         // Load migrations
         $this->loadMigrationsFrom(__DIR__ . '/../../database/migrations');
 
+        // Register Livewire components
+        if (class_exists(Livewire::class)) {
+            Livewire::component('trina-crud::permissions-manager', PermissionsManager::class);
+        }
+
         // Publish configuration (optional)
         $this->publishes([
             __DIR__ . '/../../config/trina-crud.php' => config_path('trina-crud.php'),
+            __DIR__ . '/../../resources/views' => resource_path('views/vendor/trina-crud'),
         ], 'config');
     }
 

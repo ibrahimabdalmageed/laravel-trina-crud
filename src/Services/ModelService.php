@@ -567,10 +567,11 @@ class ModelService implements ModelServiceInterface
         return $this->getModel($relatedModelName);
     }
 
+
     /**
      * Get the schema of all models
      *
-     * @return array
+     * @return ModelSchema[]
      */
     public function getSchema(): array
     {

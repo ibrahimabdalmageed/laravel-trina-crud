@@ -43,4 +43,37 @@ interface AuthorizationServiceInterface
      * @return bool
      */
     public function isAttributeAuthorized(Model $model, string $attribute, CrudAction $action): bool;
+    
+    /**
+     * Get all permission rules for models
+     * 
+     * @return array
+     */
+    public function getRules(): array;
+    
+    /**
+     * Add a permission rule
+     * 
+     * @param string $modelName The name of the model
+     * @param CrudAction $action The action (read, create, update, delete)
+     * @param string|int $userId The ID of the user or role to grant permission to
+     * @param bool $isRole Whether the ID refers to a role (true) or user (false)
+     * @return bool Success status
+     */
+    public function addRule(string $modelName, CrudAction $action, $userId, bool $isRole = false): bool;
+    
+    /**
+     * Delete a permission rule
+     * 
+     * @param string $permissionName The name of the permission to delete
+     * @return bool Success status
+     */
+    public function deleteRule(string $permissionName): bool;
+    
+    /**
+     * Get all users in the system
+     * 
+     * @return array
+     */
+    public function getAllUsers(): array;
 }

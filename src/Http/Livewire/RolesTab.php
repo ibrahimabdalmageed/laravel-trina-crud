@@ -82,7 +82,7 @@ class RolesTab extends Component
 
         $this->closeRoleModal();
         $this->loadRoles();
-        $this->emit('rolesChanged');
+        $this->dispatch('rolesChanged');
     }
 
     public function deleteRole($roleId)
@@ -94,7 +94,7 @@ class RolesTab extends Component
             $role->delete();
 
             $this->loadRoles();
-            $this->emit('rolesChanged');
+            $this->dispatch('rolesChanged');
             session()->flash('message', 'Role deleted successfully!');
         }
     }

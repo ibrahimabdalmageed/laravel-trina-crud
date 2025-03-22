@@ -2,6 +2,24 @@
     <div class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
         <h2 class="text-xl font-semibold mb-4">Add New Permission</h2>
 
+        @if (session()->has('message'))
+            <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4">
+                <span class="block sm:inline">{{ session('message') }}</span>
+            </div>
+        @endif
+
+        @if (session()->has('error'))
+            <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4">
+                <span class="block sm:inline">{{ session('error') }}</span>
+            </div>
+        @endif
+
+        @if (session()->has('info'))
+            <div class="bg-green-100 border border-blue-400 text-blue-700 px-4 py-3 rounded relative mb-4">
+                <span class="block sm:inline">{{ session('info') }}</span>
+            </div>
+        @endif
+
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
                 <label class="block text-gray-700 text-sm font-bold mb-2" for="model">
@@ -63,7 +81,7 @@
                 </div>
 
                 @if ($isRole)
-                    <select wire:model="selectedUserId"
+                    <select wire:model="selectedUserId" wire:change="$refresh"
                         class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
                         <option value="">Select a role</option>
                         @foreach ($roles as $role)
@@ -71,7 +89,7 @@
                         @endforeach
                     </select>
                 @else
-                    <select wire:model="selectedUserId"
+                    <select wire:model="selectedUserId" wire:change="$refresh"
                         class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
                         <option value="">Select a user</option>
                         @foreach ($users as $user)
@@ -85,11 +103,19 @@
                 @enderror
             </div>
 
-            <div class="flex items-end">
+            <div class="flex items-end space-x-2">
                 <button wire:click="addPermission"
                     class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
                     Add Permission
                 </button>
+
+                @if ($isRole && !empty($selectedUserId))
+                    <button wire:loading.attr="disabled" wire:loading.class="bg-green-500 opacity-50 cursor-not-allowed"
+                        wire:click="syncPermissions"
+                        class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                        Sync All Models
+                    </button>
+                @endif
             </div>
         </div>
     </div>
@@ -97,8 +123,44 @@
     <div class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
         <h2 class="text-xl font-semibold mb-4">Current Permissions</h2>
 
-        @if (count($rules) > 0)
-            @foreach ($rules as $model => $actions)
+        <!-- Filter Controls -->
+        <div class="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+                <label class="block text-gray-700 text-sm font-bold mb-2">
+                    Filter by Role
+                </label>
+                <select wire:model="filterByRoleId" wire:change="$refresh"
+                    class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                    <option value="">All Roles</option>
+                    @foreach ($roles as $role)
+                        <option value="{{ $role['id'] }}">{{ $role['name'] }}</option>
+                    @endforeach
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-gray-700 text-sm font-bold mb-2">
+                    Filter by User
+                </label>
+                <select wire:model="filterByUserId" wire:change="$refresh"
+                    class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                    <option value="">All Users</option>
+                    @foreach ($users as $user)
+                        <option value="{{ $user['id'] }}">{{ $user['name'] }}</option>
+                    @endforeach
+                </select>
+            </div>
+
+            <div class="flex items-end">
+                <button wire:click="resetFilters"
+                    class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                    Reset Filters
+                </button>
+            </div>
+        </div>
+
+        @if (count($filteredRules) > 0)
+            @foreach ($filteredRules as $model => $actions)
                 <div class="mb-6 border rounded p-4">
                     <h3 class="text-lg font-medium mb-4">{{ $model }}</h3>
 
@@ -108,10 +170,7 @@
                                 <tr>
                                     <th
                                         class="py-2 px-4 border-b border-gray-200 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Action</th>
-                                    <th
-                                        class="py-2 px-4 border-b border-gray-200 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Assigned To</th>
+                                        Permission</th>
                                     <th
                                         class="py-2 px-4 border-b border-gray-200 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         Actions</th>
@@ -120,22 +179,24 @@
                             <tbody>
                                 @foreach ($actions as $action => $details)
                                     <tr>
-                                        <td class="py-2 px-4 border-b border-gray-200">{{ ucfirst($action) }}
-                                        </td>
                                         <td class="py-2 px-4 border-b border-gray-200">
-                                            @if (count($details['roles']) > 0)
-                                                <div class="mb-1">
-                                                    <span class="font-semibold">Roles:</span>
-                                                    {{ implode(', ', $details['roles']) }}
-                                                </div>
-                                            @endif
+                                            <div class="flex items-center">
+                                                <span class="font-medium mr-2">{{ $model }}</span>
+                                                <span class="text-gray-600 mr-2">-</span>
+                                                <span class="text-blue-600">{{ ucfirst($action) }}</span>
 
-                                            @if (count($details['users']) > 0)
-                                                <div>
-                                                    <span class="font-semibold">Users:</span>
-                                                    {{ implode(', ', $details['users']) }}
-                                                </div>
-                                            @endif
+                                                @if (count($details['roles']) > 0)
+                                                    <span class="mx-2 text-gray-400">|</span>
+                                                    <span
+                                                        class="text-gray-600">{{ implode(', ', $details['roles']) }}</span>
+                                                @endif
+
+                                                @if (count($details['users']) > 0)
+                                                    <span class="mx-2 text-gray-400">|</span>
+                                                    <span
+                                                        class="text-gray-600">{{ implode(', ', $details['users']) }}</span>
+                                                @endif
+                                            </div>
                                         </td>
                                         <td class="py-2 px-4 border-b border-gray-200">
                                             <button wire:click="deletePermission('{{ $details['name'] }}')"
@@ -156,7 +217,7 @@
                 </div>
             @endforeach
         @else
-            <p class="text-gray-500">No permissions have been set up yet.</p>
+            <p class="text-gray-500">No permissions match the current filters.</p>
         @endif
     </div>
 </div>

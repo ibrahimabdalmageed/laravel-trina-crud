@@ -113,7 +113,7 @@ class PermissionMatrixTab extends Component
 
         $this->loadRules();
         $this->loadRoles();
-        $this->emit('permissionsChanged');
+        $this->dispatch('permissionsChanged');
     }
 
     // Method to handle role filter changes

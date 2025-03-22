@@ -21,6 +21,8 @@ class PermissionsTab extends Component
     public $selectedActions = [];
     public $isRole = 1; // Default to role
     public $selectedUserId = '';
+    public $filterByRoleId = ''; // New property for filtering
+    public $filterByUserId = ''; // New property for filtering by user
 
     protected $validationRules = [
         'selectedModel' => 'required|string',
@@ -52,7 +54,42 @@ class PermissionsTab extends Component
 
     public function render()
     {
-        return view('trina-crud::livewire.permissions-tab');
+        $filteredRules = $this->rules;
+
+        // Filter rules by role if a role is selected
+        if (!empty($this->filterByRoleId)) {
+            $roleModel = Role::find($this->filterByRoleId);
+            $roleName = $roleModel ? $roleModel->name : '';
+
+            // Filter the rules to only show those for the selected role
+            $filteredRules = collect($this->rules)->map(function ($actions, $model) use ($roleName) {
+                $filteredActions = collect($actions)->filter(function ($details) use ($roleName) {
+                    return in_array($roleName, $details['roles']);
+                });
+
+                return $filteredActions->count() > 0 ? $filteredActions->toArray() : null;
+            })->filter()->toArray();
+        }
+
+        // Filter rules by user if a user is selected
+        if (!empty($this->filterByUserId)) {
+            $userModel = app(config('auth.providers.users.model'));
+            $user = $userModel::find($this->filterByUserId);
+            $userName = $user ? $user->name : '';
+
+            // Filter the rules to only show those for the selected user
+            $filteredRules = collect($this->rules)->map(function ($actions, $model) use ($userName) {
+                $filteredActions = collect($actions)->filter(function ($details) use ($userName) {
+                    return in_array($userName, $details['users']);
+                });
+
+                return $filteredActions->count() > 0 ? $filteredActions->toArray() : null;
+            })->filter()->toArray();
+        }
+
+        return view('trina-crud::livewire.permissions-tab', [
+            'filteredRules' => $filteredRules
+        ]);
     }
 
     public function loadModels()
@@ -117,7 +154,7 @@ class PermissionsTab extends Component
 
         $this->reset(['selectedActions', 'selectedUserId']);
         $this->loadRules();
-        $this->emit('permissionsChanged');
+        $this->dispatch('permissionsChanged');
         session()->flash('message', 'Permissions added successfully!');
     }
 
@@ -127,7 +164,48 @@ class PermissionsTab extends Component
         $authService->deleteRule($permissionName);
 
         $this->loadRules();
-        $this->emit('permissionsChanged');
+        $this->dispatch('permissionsChanged');
         session()->flash('message', 'Permission deleted successfully!');
+    }
+
+    /**
+     * Sync permissions for all models with the selected role
+     */
+    public function syncPermissions()
+    {
+        if (empty($this->selectedUserId) || $this->isRole != 1) {
+            session()->flash('error', 'Please select a role to sync permissions');
+            return;
+        }
+
+        $authService = App::make(AuthorizationServiceInterface::class);
+        $crudActions = [
+            'create',
+            'read',
+            'update',
+            'delete'
+        ];
+
+        // For each model, create permissions for all actions
+        foreach ($this->models as $model) {
+            foreach ($crudActions as $actionName) {
+                $action = CrudAction::from($actionName);
+                // Only add if the permission doesn't already exist
+                $authService->addRule($model, $action, $this->selectedUserId, true);
+            }
+        }
+
+        $this->loadRules();
+        $this->dispatch('permissionsChanged');
+        session()->flash('message', 'Permissions synced successfully for all models!');
+    }
+
+    /**
+     * Reset filters
+     */
+    public function resetFilters()
+    {
+        $this->filterByRoleId = '';
+        $this->filterByUserId = '';
     }
 }

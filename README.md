@@ -182,11 +182,6 @@ Protect your API routes with middleware:
     'api',
     'auth:api',
 ],
-
-'admin_middleware' => [
-    'auth:api',
-    'can:manage-trina-crud',
-],
 ```
 
 ### Model Scanning

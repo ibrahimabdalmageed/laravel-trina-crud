@@ -4,9 +4,9 @@ namespace Trinavo\TrinaCrud\Services\AuthorizationServices;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Str;
 use Trinavo\TrinaCrud\Contracts\AuthorizationServiceInterface;
 use Trinavo\TrinaCrud\Enums\CrudAction;
+use Spatie\Permission\Exceptions\PermissionDoesNotExist;
 
 class SpatiePermissionAuthorizationService implements AuthorizationServiceInterface
 {
@@ -33,7 +33,11 @@ class SpatiePermissionAuthorizationService implements AuthorizationServiceInterf
             return false;
         }
 
-        return $user->hasPermissionTo($permissionName);
+        try {
+            return $user->hasPermissionTo($permissionName);
+        } catch (PermissionDoesNotExist $e) {
+            return false;
+        }
     }
 
     /**

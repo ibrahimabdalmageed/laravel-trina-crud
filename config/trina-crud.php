@@ -42,4 +42,23 @@ return [
         'auth:sanctum',
     ],
 
+
+    /*
+    |--------------------------------------------------------------------------
+    | Admin Middleware
+    |--------------------------------------------------------------------------
+    |
+    | These middleware will be assigned to all TrinaCrud admin routes.
+    | You can add your own middleware to this list or use an empty array
+    | to disable all middleware for TrinaCrud admin routes.
+    |
+    */
+    'admin_middleware' => [
+        'web',
+    ],
+
+
+    'admin_route_prefix' => env('TRINA_CRUD_ADMIN_PREFIX', 'trina-crud/admin'),
+
+
 ];

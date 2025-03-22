@@ -72,7 +72,7 @@ class SpatiePermissionAuthorizationService implements AuthorizationServiceInterf
         // Check if user has the permission
         return $this->hasPermissionTo($permissionName);
     }
-    
+
     /**
      * Get all permission rules for models
      * 
@@ -82,17 +82,17 @@ class SpatiePermissionAuthorizationService implements AuthorizationServiceInterf
     {
         $permissions = Permission::all();
         $rules = [];
-        
+
         foreach ($permissions as $permission) {
             // Only include permissions that match our format
             if (preg_match('/^(read|create|update|delete)\s+(.+)$/', $permission->name, $matches)) {
                 $action = $matches[1];
                 $model = $matches[2];
-                
+
                 if (!isset($rules[$model])) {
                     $rules[$model] = [];
                 }
-                
+
                 $rules[$model][$action] = [
                     'id' => $permission->id,
                     'name' => $permission->name,
@@ -101,10 +101,10 @@ class SpatiePermissionAuthorizationService implements AuthorizationServiceInterf
                 ];
             }
         }
-        
+
         return $rules;
     }
-    
+
     /**
      * Add a permission rule
      * 
@@ -117,10 +117,10 @@ class SpatiePermissionAuthorizationService implements AuthorizationServiceInterf
     public function addRule(string $modelName, CrudAction $action, $userId, bool $isRole = false): bool
     {
         $permissionName = $action->toModelPermissionString($modelName);
-        
+
         // Create permission if it doesn't exist
         $permission = Permission::firstOrCreate(['name' => $permissionName, 'guard_name' => 'web']);
-        
+
         if ($isRole) {
             $role = Role::findById($userId);
             $role->givePermissionTo($permission);
@@ -131,10 +131,10 @@ class SpatiePermissionAuthorizationService implements AuthorizationServiceInterf
                 $user->givePermissionTo($permission);
             }
         }
-        
+
         return true;
     }
-    
+
     /**
      * Delete a permission rule
      * 
@@ -151,7 +151,7 @@ class SpatiePermissionAuthorizationService implements AuthorizationServiceInterf
             return false;
         }
     }
-    
+
     /**
      * Get all users in the system
      * 
@@ -160,7 +160,7 @@ class SpatiePermissionAuthorizationService implements AuthorizationServiceInterf
     public function getAllUsers(): array
     {
         $userModel = $this->getUserModelClass();
-        
+
         return $userModel::all()->map(function ($user) {
             return [
                 'id' => $user->id,
@@ -169,7 +169,7 @@ class SpatiePermissionAuthorizationService implements AuthorizationServiceInterf
             ];
         })->toArray();
     }
-    
+
     /**
      * Get all roles in the system
      * 
@@ -184,7 +184,7 @@ class SpatiePermissionAuthorizationService implements AuthorizationServiceInterf
             ];
         })->toArray();
     }
-    
+
     /**
      * Get the user model class
      * 

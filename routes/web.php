@@ -11,8 +11,8 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::middleware(config('trina-crud.middleware'))->group(function () {
-    Route::get('/trina-crud/permissions', function () {
+Route::middleware(config('trina-crud.admin_middleware'))->prefix(config('trina-crud.admin_route_prefix'))->group(function () {
+    Route::get('/permissions', function () {
         return view('trina-crud::permissions');
     })->name('trina-crud.permissions');
 });

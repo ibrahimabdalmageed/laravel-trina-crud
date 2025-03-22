@@ -30,6 +30,12 @@
                         Permission Matrix
                     </button>
                 </li>
+                <li class="mr-2">
+                    <button wire:click="$set('activeTab', 'user-roles')"
+                        class="inline-block p-4 {{ $activeTab === 'user-roles' ? 'border-b-2 border-blue-500 text-blue-600' : 'text-gray-500 hover:text-gray-700' }}">
+                        User Roles
+                    </button>
+                </li>
             </ul>
         </div>
 
@@ -188,24 +194,6 @@
                                     </tbody>
                                 </table>
                             </div>
-
-                            <div class="mt-4">
-                                <h4 class="font-medium mb-2">Quick Assign</h4>
-                                <div class="flex flex-wrap gap-2">
-                                    <button wire:click="bulkAssignToRole('{{ $model }}', 'admin')"
-                                        class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-1 px-3 rounded focus:outline-none focus:shadow-outline">
-                                        Admin Full Access
-                                    </button>
-                                    <button wire:click="bulkAssignToRole('{{ $model }}', 'editor')"
-                                        class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-1 px-3 rounded focus:outline-none focus:shadow-outline">
-                                        Editor (Read/Update)
-                                    </button>
-                                    <button wire:click="bulkAssignToRole('{{ $model }}', 'viewer')"
-                                        class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-1 px-3 rounded focus:outline-none focus:shadow-outline">
-                                        Viewer (Read Only)
-                                    </button>
-                                </div>
-                            </div>
                         </div>
                     @endforeach
                 @else
@@ -217,13 +205,20 @@
         <!-- Roles Tab -->
         @if ($activeTab === 'roles')
             <div class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
-                <div class="flex justify-between items-center mb-4">
+                <div class="flex justify-between items-center mb-6">
                     <h2 class="text-xl font-semibold">Manage Roles</h2>
-                    <button wire:click="showCreateRoleModal"
-                        class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
-                        Create New Role
-                    </button>
+                    <div class="space-x-2">
+                        <button wire:click="showUserRoleAssignmentModal"
+                            class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                            Assign User to Role
+                        </button>
+                        <button wire:click="showCreateRoleModal"
+                            class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                            Create New Role
+                        </button>
+                    </div>
                 </div>
+
 
                 @if (count($roles) > 0)
                     <div class="overflow-x-auto">
@@ -416,35 +411,192 @@
             </div>
         @endif
 
-        <!-- Create Role Modal -->
-        @if ($showRoleModal)
-            <div class="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50">
-                <div class="bg-white rounded-lg p-8 max-w-md w-full">
-                    <h3 class="text-lg font-medium mb-4">{{ $editingRoleId ? 'Edit Role' : 'Create New Role' }}</h3>
+        <!-- User Roles Tab -->
+        @if ($activeTab === 'user-roles')
+            <div class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
+                <h2 class="text-xl font-semibold mb-6">Manage User Roles</h2>
 
-                    <div class="mb-4">
-                        <label class="block text-gray-700 text-sm font-bold mb-2" for="roleName">
-                            Role Name
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- User Selection -->
+                    <div>
+                        <label class="block text-gray-700 text-sm font-bold mb-2" for="selectedUserForRoles">
+                            Select User
                         </label>
-                        <input wire:model="roleName" id="roleName" type="text"
+                        <select wire:model.live="selectedUserForRoles" id="selectedUserForRoles"
                             class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
-                        @error('roleName')
-                            <span class="text-red-500 text-xs">{{ $message }}</span>
-                        @enderror
+                            <option value="">Select a user</option>
+                            @foreach ($users as $user)
+                                <option value="{{ $user['id'] }}">
+                                    {{ $user['name'] }} ({{ $user['email'] ?? '' }})
+                                </option>
+                            @endforeach
+                        </select>
                     </div>
 
-                    <div class="flex justify-end">
-                        <button wire:click="closeRoleModal"
-                            class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline mr-2">
-                            Cancel
-                        </button>
-                        <button wire:click="saveRole"
-                            class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
-                            {{ $editingRoleId ? 'Update' : 'Create' }}
-                        </button>
+                    <!-- Role Assignment -->
+                    <div>
+                        <label class="block text-gray-700 text-sm font-bold mb-2" for="selectedRoleToAssign">
+                            Assign New Role
+                        </label>
+                        <div class="flex">
+                            <select wire:model.live="selectedRoleToAssign" id="selectedRoleToAssign"
+                                class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                                <option value="">Select a role to assign</option>
+                                @foreach ($allRoles as $role)
+                                    <option value="{{ $role['id'] }}">{{ $role['name'] }}</option>
+                                @endforeach
+                            </select>
+                            <button wire:click="assignRoleToSelectedUser"
+                                class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline ml-2"
+                                {{ empty($selectedUserForRoles) || empty($selectedRoleToAssign) ? 'disabled' : '' }}>
+                                Assign
+                            </button>
+                        </div>
+                        <!-- Debug info -->
+                        <div class="mt-2 text-xs text-gray-500">
+                            Selected User ID: {{ $selectedUserForRoles ?: 'None' }} |
+                            Selected Role ID: {{ $selectedRoleToAssign ?: 'None' }}
+                        </div>
                     </div>
                 </div>
             </div>
-        @endif
+
+            <!-- Current User Roles -->
+            @if (!empty($selectedUserForRoles))
+                <div class="mt-8">
+                    <h3 class="text-lg font-medium mb-4">Current Roles</h3>
+
+                    @if (count($userCurrentRoles) > 0)
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full bg-white">
+                                <thead>
+                                    <tr>
+                                        <th
+                                            class="py-2 px-4 border-b border-gray-200 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Role Name
+                                        </th>
+                                        <th
+                                            class="py-2 px-4 border-b border-gray-200 bg-gray-50 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Actions
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach ($userCurrentRoles as $role)
+                                        <tr>
+                                            <td class="py-2 px-4 border-b border-gray-200">
+                                                {{ $role['name'] }}
+                                            </td>
+                                            <td class="py-2 px-4 border-b border-gray-200 text-right">
+                                                <button wire:click="removeRoleFromUser({{ $role['id'] }})"
+                                                    class="text-red-600 hover:text-red-900">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline"
+                                                        fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path stroke-linecap="round" stroke-linejoin="round"
+                                                            stroke-width="2"
+                                                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                    </svg>
+                                                    Remove
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    @else
+                        <p class="text-gray-500">This user has no roles assigned.</p>
+                    @endif
+                </div>
+            @endif
     </div>
+    @endif
+
+    <!-- User-Role Assignment Modal -->
+    @if ($showUserRoleModal)
+        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50">
+            <div class="bg-white rounded-lg p-8 max-w-md w-full">
+                <h3 class="text-lg font-medium mb-4">Assign User to Roles</h3>
+
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="selectedUserForRole">
+                        Select User
+                    </label>
+                    <select wire:model="selectedUserForRole" id="selectedUserForRole"
+                        class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                        <option value="">Select a user</option>
+                        @foreach ($users as $user)
+                            <option value="{{ $user['id'] }}">{{ $user['name'] }} ({{ $user['email'] }})
+                            </option>
+                        @endforeach
+                    </select>
+                    @error('selectedUserForRole')
+                        <span class="text-red-500 text-xs">{{ $message }}</span>
+                    @enderror
+                </div>
+
+                @if (!empty($selectedUserForRole) && count($availableRolesForUser) > 0)
+                    <div class="mb-4">
+                        <label class="block text-gray-700 text-sm font-bold mb-2">
+                            Assign Roles
+                        </label>
+                        <div class="max-h-60 overflow-y-auto border rounded p-2">
+                            @foreach ($availableRolesForUser as $role)
+                                <div class="mb-2">
+                                    <label class="inline-flex items-center">
+                                        <input type="checkbox" wire:model="selectedRolesForUser"
+                                            value="{{ $role['id'] }}" class="form-checkbox h-5 w-5 text-blue-600">
+                                        <span class="ml-2 text-gray-700">{{ $role['name'] }}</span>
+                                    </label>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+                @endif
+
+                <div class="flex justify-end">
+                    <button wire:click="closeUserRoleModal"
+                        class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline mr-2">
+                        Cancel
+                    </button>
+                    <button wire:click="saveUserRoles"
+                        class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                        Save
+                    </button>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    <!-- Create Role Modal -->
+    @if ($showRoleModal)
+        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50">
+            <div class="bg-white rounded-lg p-8 max-w-md w-full">
+                <h3 class="text-lg font-medium mb-4">{{ $editingRoleId ? 'Edit Role' : 'Create New Role' }}</h3>
+
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="roleName">
+                        Role Name
+                    </label>
+                    <input wire:model="roleName" id="roleName" type="text"
+                        class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                    @error('roleName')
+                        <span class="text-red-500 text-xs">{{ $message }}</span>
+                    @enderror
+                </div>
+
+                <div class="flex justify-end">
+                    <button wire:click="closeRoleModal"
+                        class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline mr-2">
+                        Cancel
+                    </button>
+                    <button wire:click="saveRole"
+                        class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                        {{ $editingRoleId ? 'Update' : 'Create' }}
+                    </button>
+                </div>
+            </div>
+        </div>
+    @endif
+</div>
 </div>

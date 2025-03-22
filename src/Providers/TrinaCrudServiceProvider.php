@@ -8,6 +8,10 @@ use Trinavo\TrinaCrud\Contracts\AuthorizationServiceInterface;
 use Trinavo\TrinaCrud\Contracts\ModelServiceInterface;
 use Trinavo\TrinaCrud\Contracts\OwnershipServiceInterface;
 use Trinavo\TrinaCrud\Http\Livewire\PermissionsManager;
+use Trinavo\TrinaCrud\Http\Livewire\PermissionsTab;
+use Trinavo\TrinaCrud\Http\Livewire\RolesTab;
+use Trinavo\TrinaCrud\Http\Livewire\PermissionMatrixTab;
+use Trinavo\TrinaCrud\Http\Livewire\UserRolesTab;
 use Trinavo\TrinaCrud\Http\Middleware\TrinaCrudAdminMiddleware;
 use Trinavo\TrinaCrud\Services\AuthorizationServices\AllowAllAuthorizationService;
 use Trinavo\TrinaCrud\Services\AuthorizationServices\SpatiePermissionAuthorizationService;
@@ -35,6 +39,10 @@ class TrinaCrudServiceProvider extends ServiceProvider
         // Register Livewire components
         if (class_exists(Livewire::class)) {
             Livewire::component('trina-crud::permissions-manager', PermissionsManager::class);
+            Livewire::component('trina-crud::permissions-tab', PermissionsTab::class);
+            Livewire::component('trina-crud::roles-tab', RolesTab::class);
+            Livewire::component('trina-crud::permission-matrix-tab', PermissionMatrixTab::class);
+            Livewire::component('trina-crud::user-roles-tab', UserRolesTab::class);
         }
 
         // Publish configuration (optional)

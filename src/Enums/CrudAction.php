@@ -20,7 +20,7 @@ enum CrudAction: string
      */
     public function toModelPermissionString(string $modelName): string
     {
-        return $this->value . '-' . Str::kebab($modelName);
+        return $this->value . ' ' . str_replace("\\", ".", $modelName);
     }
 
     /**
@@ -32,8 +32,6 @@ enum CrudAction: string
      */
     public function toAttributePermissionString(string $modelName, string $attribute): string
     {
-        return Str::kebab($modelName) . '_' .
-            Str::kebab($attribute) . '_' .
-            Str::kebab($this->value);
+        return $this->value . ' ' . str_replace("\\", ".", $modelName) . ' ' . $attribute;
     }
 }

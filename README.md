@@ -15,7 +15,7 @@ TrinaCrud is a powerful Laravel package that simplifies CRUD operations by provi
 ## Installation
 
 ```bash
-composer require trinavo/trina-crud
+composer require trinavo/laravel-trina-crud
 ```
 
 Publish the configuration file:
@@ -39,7 +39,7 @@ Follow the [Spatie Permission installation instructions](https://spatie.be/docs/
 ### 2. Install Ownable Package
 
 ```bash
-composer require trinavo/ownable
+composer require trinavo/laravel-ownable
 ```
 
 ### 3. Add the Trait to Your Model

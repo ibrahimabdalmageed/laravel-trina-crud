@@ -7,102 +7,36 @@ use Trinavo\TrinaCrud\Enums\CrudAction;
 
 interface AuthorizationServiceInterface
 {
-    /**
-     * Check if the user has permission to perform an action
-     * 
-     * @param string $permissionName
-     * @return bool
-     */
-    public function hasPermissionTo(string $permissionName): bool;
 
+    public function authHasModelPermission(string $modelName, CrudAction $action): bool;
 
+    public function authHasAttributePermission(string $modelName, string $attribute, CrudAction $action): bool;
 
-    /**
-     * Check if the user has permission to access a model
-     *
-     * @param string $modelName The name of the model
-     * @param CrudAction $action The action (view, create, update, delete)
-     * @return bool
-     */
-    public function hasModelPermission(string $modelName, CrudAction $action): bool;
+    public function roleHasModelPermission(string $modelName, CrudAction $action, string $role): bool;
 
+    public function userHasModelPermission(string $modelName, CrudAction $action, int|Model $user): bool;
 
+    public function setRoleModelPermission(string $modelName, CrudAction $action, string $role, bool $enable): void;
 
-    /**
-     * Set permission for a role to perform an action on a model
-     * 
-     * @param string $modelName The name of the model
-     * @param CrudAction $action The action (view, create, update, delete)
-     * @param int $roleId The ID of the role
-     * @param bool $enable Whether to grant or revoke permission
-     */
-    public function setModelRolePermission(string $modelName, CrudAction $action, int $roleId, bool $enable): void;
+    public function setUserModelPermission(string $modelName, CrudAction $action, int|Model $user, bool $enable): void;
 
-    /**
-     * Set permission for a user to perform an action on a model
-     * 
-     * @param string $modelName The name of the model
-     * @param CrudAction $action The action (view, create, update, delete)
-     * @param int $userId The ID of the user
-     * @param bool $enable Whether to grant or revoke permission
-     */
-    public function setModelUserPermission(string $modelName, CrudAction $action, int $userId, bool $enable): void;
+    public function roleHasAttributePermission(string $modelName, string $attribute, CrudAction $action, string $role): bool;
 
-    /**
-     * Get the user model
-     * 
-     * @return ?Model
-     */
-    public function getUser(): ?Model;
+    public function userHasAttributePermission(string $modelName, string $attribute, CrudAction $action, int|Model $user): bool;
 
-    /**
-     * Check if the user has permission to access a model attribute
-     * 
-     * @param Model $model The model
-     * @param string $attribute The attribute
-     * @param CrudAction $action The action (view, create, update, delete)
-     * @return bool
-     */
-    public function isAttributeAuthorized(Model $model, string $attribute, CrudAction $action): bool;
+    public function setRoleAttributePermission(string $modelName, string $attribute, CrudAction $action, string $role, bool $enable): void;
 
-    /**
-     * Get all permission rules for models
-     * 
-     * @return array
-     */
-    public function getRules(): array;
+    public function setUserAttributePermission(string $modelName, string $attribute, CrudAction $action, int|Model $user, bool $enable): void;
 
-    /**
-     * Add a permission rule
-     * 
-     * @param string $modelName The name of the model
-     * @param CrudAction $action The action (read, create, update, delete)
-     * @param string|int $userId The ID of the user or role to grant permission to
-     * @param bool $isRole Whether the ID refers to a role (true) or user (false)
-     * @return bool Success status
-     */
-    public function addRule(string $modelName, CrudAction $action, $userId, bool $isRole = false): bool;
+    public function getAuthUser(): ?Model;
 
-    /**
-     * Delete a permission rule
-     * 
-     * @param string $permissionName The name of the permission to delete
-     * @return bool Success status
-     */
-    public function deleteRule(string $permissionName): bool;
+    public function getUserRoles(Model $user): ?array;
 
-    /**
-     * Get all users in the system
-     * 
-     * @return array
-     */
     public function getAllUsers(): array;
 
+    public function assignRole($role, int|Model $user): bool;
 
-    /**
-     * Find a role by ID
-     * 
-     * @param int $roleId The ID of the role
-     */
-    public function findRole(int $roleId);
+    public function getAllRoles(): array;
+
+    public function getUser(int $user): ?Model;
 }

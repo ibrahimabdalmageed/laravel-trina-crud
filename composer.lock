@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "c5c2900f9c599bd91241da826bcf69b2",
+    "content-hash": "2706b4da80a2c35692137149f3f45c95",
     "packages": [
         {
             "name": "brick/math",
@@ -8658,11 +8658,69 @@
                 }
             ],
             "time": "2024-03-03T12:36:25+00:00"
+        },
+        {
+            "name": "trinavo/laravel-ownable",
+            "version": "dev-main",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/doonfrs/laravel-ownable.git",
+                "reference": "3c21f978c9dc8e378b3006cc99836ecc09aa1d8c"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/doonfrs/laravel-ownable/zipball/3c21f978c9dc8e378b3006cc99836ecc09aa1d8c",
+                "reference": "3c21f978c9dc8e378b3006cc99836ecc09aa1d8c",
+                "shasum": ""
+            },
+            "require": {
+                "illuminate/support": "^12.0",
+                "php": "^8.2",
+                "spatie/laravel-permission": "^6.16"
+            },
+            "require-dev": {
+                "laravel/framework": "^12.0",
+                "mockery/mockery": "^1.5",
+                "orchestra/testbench": "^10.0",
+                "phpunit/phpunit": "^11.0"
+            },
+            "default-branch": true,
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "Trinavo\\Ownable\\Providers\\OwnableServiceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Trinavo\\Ownable\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Feras Abdalrahman",
+                    "email": "doon@gmail.com"
+                }
+            ],
+            "description": "A Laravel package for managing ownership of models.",
+            "support": {
+                "issues": "https://github.com/doonfrs/laravel-ownable/issues",
+                "source": "https://github.com/doonfrs/laravel-ownable/tree/main"
+            },
+            "time": "2025-03-18T21:12:49+00:00"
         }
     ],
     "aliases": [],
     "minimum-stability": "dev",
-    "stability-flags": {},
+    "stability-flags": {
+        "trinavo/laravel-ownable": 20
+    },
     "prefer-stable": true,
     "prefer-lowest": false,
     "platform": {

@@ -8,53 +8,83 @@ use Trinavo\TrinaCrud\Enums\CrudAction;
 
 class AllowAllAuthorizationService implements AuthorizationServiceInterface
 {
-    public function hasPermissionTo(string $permissionName): bool
+    public function getUser(int $user): ?Model
     {
-        return true;
+        return null;
     }
 
-    public function hasModelPermission(string $modelName, CrudAction $action): bool
+    public function getAuthUser(): ?Model
     {
-        return true;
+        return null;
     }
 
-    public function setModelRolePermission(string $modelName, CrudAction $action, int $roleId, bool $enable): void {}
-
-    public function setModelUserPermission(string $modelName, CrudAction $action, int $userId, bool $enable): void {}
-
-    public function getRules(): array
+    public function getUserRoles(Model $user): ?array
     {
         return [];
     }
-
 
     public function getAllUsers(): array
     {
         return [];
     }
 
-    public function addRule(string $modelName, CrudAction $action, $userId, bool $isRole = false): bool
+    public function assignRole($role, int|Model $user): bool
     {
         return true;
     }
 
-    public function deleteRule(string $permissionName): bool
+    public function getAllRoles(): array
+    {
+        return [];
+    }
+
+    public function userHasModelPermission(string $modelName, CrudAction $action, int|Model $user): bool
     {
         return true;
     }
 
-    public function getUser(): ?Model
-    {
-        return null;
-    }
-
-    public function isAttributeAuthorized(Model $model, string $attribute, CrudAction $action): bool
+    public function userHasAttributePermission(string $modelName, string $attribute, CrudAction $action, int|Model $user): bool
     {
         return true;
     }
 
-    public function findRole(int $roleId)
+    public function roleHasModelPermission(string $modelName, CrudAction $action, string $role): bool
     {
-        return null;
+        return true;
+    }
+
+    public function roleHasAttributePermission(string $modelName, string $attribute, CrudAction $action, string $role): bool
+    {
+        return true;
+    }
+
+    public function setRoleModelPermission(string $modelName, CrudAction $action, string $role, bool $enable): void
+    {
+        // Do nothing
+    }
+
+    public function setUserModelPermission(string $modelName, CrudAction $action, int|Model $user, bool $enable): void
+    {
+        // Do nothing
+    }
+
+    public function setRoleAttributePermission(string $modelName, string $attribute, CrudAction $action, string $role, bool $enable): void
+    {
+        // Do nothing
+    }
+
+    public function setUserAttributePermission(string $modelName, string $attribute, CrudAction $action, int|Model $user, bool $enable): void
+    {
+        // Do nothing
+    }
+
+    public function authHasModelPermission(string $modelName, CrudAction $action): bool
+    {
+        return true;
+    }
+
+    public function authHasAttributePermission(string $modelName, string $attribute, CrudAction $action): bool
+    {
+        return true;
     }
 }

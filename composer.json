@@ -1,6 +1,6 @@
 {
     "name": "trinavo/laravel-trina-crud",
-    "description": "A Laravel package for scanning models, storing model and column information, providing an API to return model info, and supporting CRUD operations.",
+    "description": "Laravel package for rapid CRUD API generation with built-in authorization and validation.",
     "type": "library",
     "license": "MIT",
     "authors": [

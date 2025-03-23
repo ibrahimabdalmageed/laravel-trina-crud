@@ -2,7 +2,7 @@
 
 ## Introduction
 
-TrinaCrud is a powerful Laravel package that simplifies CRUD operations by providing a trait-based approach to quickly generate API endpoints for your models. With minimal setup, you can have fully functional REST APIs with proper authorization, validation, and security features.
+TrinaCrud is a Laravel package for rapid CRUD API generation with built-in authorization and validation.
 
 ## Features
 

@@ -18,7 +18,7 @@ class AllowAllAuthorizationService implements AuthorizationServiceInterface
         return null;
     }
 
-    public function getUserRoles(Model $user): ?array
+    public function getUserRoles(Model|int $user): ?array
     {
         return [];
     }
@@ -28,7 +28,12 @@ class AllowAllAuthorizationService implements AuthorizationServiceInterface
         return [];
     }
 
-    public function assignRole($role, int|Model $user): bool
+    public function assignRoleToUser($role, int|Model $user): bool
+    {
+        return true;
+    }
+
+    public function revokeRoleFromUser($role, int|Model $user): bool
     {
         return true;
     }

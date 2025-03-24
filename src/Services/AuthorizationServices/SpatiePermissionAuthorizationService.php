@@ -15,7 +15,9 @@ class SpatiePermissionAuthorizationService implements AuthorizationServiceInterf
 
     public function getUser(int $user): ?Model
     {
-        return User::find($user);
+        $userClass = config('auth.providers.users.model');
+
+        return $userClass::find($user);
     }
 
     public function getAuthUser(): ?Model
@@ -25,6 +27,14 @@ class SpatiePermissionAuthorizationService implements AuthorizationServiceInterf
 
     public function getUserRoles(Model|int $user): ?array
     {
+        if (!$user instanceof Model) {
+            $user = $this->getUser($user);
+        }
+
+        if (!$user) {
+            return [];
+        }
+
         if (!$user->roles) {
             return [];
         }
@@ -34,16 +44,28 @@ class SpatiePermissionAuthorizationService implements AuthorizationServiceInterf
 
     public function getAllUsers(): array
     {
-        return User::all()->pluck('id', 'name')->toArray();
+        return User::all()->map(function ($user) {
+            return ['id' => $user->id, 'name' => $user->name];
+        })->toArray();
     }
 
-    public function assignRole($role, int|Model $user): bool
+    public function assignRoleToUser($role, int|Model $user): bool
     {
         if (!$user instanceof Model) {
             $user = $this->getUser($user);
         }
 
         $user->assignRole($role);
+        return true;
+    }
+
+    public function revokeRoleFromUser($role, int|Model $user): bool
+    {
+        if (!$user instanceof Model) {
+            $user = $this->getUser($user);
+        }
+
+        $user->removeRole($role);
         return true;
     }
 
@@ -93,9 +115,9 @@ class SpatiePermissionAuthorizationService implements AuthorizationServiceInterf
         }
 
         if ($enable) {
-            $user->assignRole($action->toModelPermissionString($modelName));
+            $user->givePermissionTo($action->toModelPermissionString($modelName));
         } else {
-            $user->removeRole($action->toModelPermissionString($modelName));
+            $user->removePermissionTo($action->toModelPermissionString($modelName));
         }
     }
 

@@ -30,11 +30,13 @@ interface AuthorizationServiceInterface
 
     public function getAuthUser(): ?Model;
 
-    public function getUserRoles(Model $user): ?array;
+    public function getUserRoles(Model|int $user): ?array;
 
     public function getAllUsers(): array;
 
-    public function assignRole($role, int|Model $user): bool;
+    public function assignRoleToUser($role, int|Model $user): bool;
+
+    public function revokeRoleFromUser($role, int|Model $user): bool;
 
     public function getAllRoles(): array;
 

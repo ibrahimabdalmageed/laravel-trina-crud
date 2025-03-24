@@ -87,4 +87,14 @@ class AllowAllAuthorizationService implements AuthorizationServiceInterface
     {
         return true;
     }
+
+    public function deleteRole(string $role): void
+    {
+        // Do nothing
+    }
+
+    public function createRole(string $role): void
+    {
+        // Do nothing
+    }
 }

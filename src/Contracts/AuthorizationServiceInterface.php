@@ -39,4 +39,8 @@ interface AuthorizationServiceInterface
     public function getAllRoles(): array;
 
     public function getUser(int $user): ?Model;
+
+    public function deleteRole(string $role): void;
+
+    public function createRole(string $role): void;
 }

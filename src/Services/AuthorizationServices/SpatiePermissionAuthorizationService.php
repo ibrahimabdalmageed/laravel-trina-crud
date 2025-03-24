@@ -139,4 +139,16 @@ class SpatiePermissionAuthorizationService implements AuthorizationServiceInterf
         }
         return $this->userHasAttributePermission($modelName, $attribute, $action, $user);
     }
+
+    public function deleteRole(string $role): void
+    {
+        Role::findByName($role)->delete();
+    }
+
+    public function createRole(string $role): void
+    {
+        Role::create([
+            'name' => $role
+        ]);
+    }
 }

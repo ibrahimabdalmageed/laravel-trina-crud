@@ -2,8 +2,6 @@
 
 namespace Trinavo\TrinaCrud\Enums;
 
-use Illuminate\Support\Str;
-
 enum CrudAction: string
 {
     case READ = 'read';

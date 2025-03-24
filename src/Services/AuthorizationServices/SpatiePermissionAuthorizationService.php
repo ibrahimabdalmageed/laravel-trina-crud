@@ -5,6 +5,9 @@ namespace Trinavo\TrinaCrud\Services\AuthorizationServices;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Auth\User;
 use Illuminate\Support\Facades\Auth;
+use Spatie\Permission\Exceptions\PermissionAlreadyExists;
+use Spatie\Permission\Exceptions\PermissionDoesNotExist;
+use Spatie\Permission\Models\Permission;
 use Trinavo\TrinaCrud\Contracts\AuthorizationServiceInterface;
 use Trinavo\TrinaCrud\Enums\CrudAction;
 use Spatie\Permission\Models\Role;
@@ -59,7 +62,7 @@ class SpatiePermissionAuthorizationService implements AuthorizationServiceInterf
         return true;
     }
 
-    public function revokeRoleFromUser($role, int|Model $user): bool
+    public function removeRoleForUser($role, int|Model $user): bool
     {
         if (!$user instanceof Model) {
             $user = $this->getUser($user);
@@ -80,7 +83,11 @@ class SpatiePermissionAuthorizationService implements AuthorizationServiceInterf
             $user = $this->getUser($user);
         }
 
-        return $user->can($action->toModelPermissionString($modelName));
+        try {
+            return $user->hasPermissionTo($action->toModelPermissionString($modelName));
+        } catch (PermissionDoesNotExist $e) {
+            return false;
+        }
     }
 
     public function userHasAttributePermission(string $modelName, string $attribute, CrudAction $action, int|Model $user): bool
@@ -89,23 +96,48 @@ class SpatiePermissionAuthorizationService implements AuthorizationServiceInterf
             $user = $this->getUser($user);
         }
 
-        return $user->can($action->toAttributePermissionString($modelName, $attribute));
+        try {
+            return $user->hasPermissionTo($action->toAttributePermissionString($modelName, $attribute));
+        } catch (PermissionDoesNotExist $e) {
+            return false;
+        }
     }
 
     public function roleHasModelPermission(string $modelName, CrudAction $action, string $role): bool
     {
-        return Role::findByName($role)->can($action->toModelPermissionString($modelName));
+        try {
+            return Role::findByName($role)->hasPermissionTo($action->toModelPermissionString($modelName));
+        } catch (PermissionDoesNotExist $e) {
+            return false;
+        }
     }
 
     public function roleHasAttributePermission(string $modelName, string $attribute, CrudAction $action, string $role): bool
     {
-        return Role::findByName($role)->can($action->toAttributePermissionString($modelName, $attribute));
+        try {
+            return Role::findByName($role)->hasPermissionTo($action->toAttributePermissionString($modelName, $attribute));
+        } catch (PermissionDoesNotExist $e) {
+            return false;
+        }
     }
 
     public function setRoleModelPermission(string $modelName, CrudAction $action, string $role, bool $enable): void
     {
         $role = Role::findByName($role);
-        $role->givePermissionTo($action->toModelPermissionString($modelName));
+        $permissionName = $action->toModelPermissionString($modelName);
+
+        if ($enable) {
+            try {
+                Permission::create([
+                    'name' => $permissionName
+                ]);
+            } catch (PermissionAlreadyExists $e) {
+            }
+
+            $role->givePermissionTo($permissionName);
+        } else {
+            $role->revokePermissionTo($permissionName);
+        }
     }
 
     public function setUserModelPermission(string $modelName, CrudAction $action, int|Model $user, bool $enable): void

@@ -62,7 +62,7 @@
                             class="font-medium text-gray-700 px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-800">{{ $role }}</span>
                         <button
                             class="bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-md transition duration-300 ease-in-out flex items-center"
-                            @click="if (confirm('Are you sure you want to remove this role?')) { $wire.revokeRoleFromUser('{{ $role }}') }">
+                            @click="if (confirm('Are you sure you want to remove this role?')) { $wire.removeRoleForUser('{{ $role }}') }">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none"
                                 viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"

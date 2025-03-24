@@ -36,9 +36,9 @@ class UserRolesTab extends Component
         $this->getCurrentRoles();
     }
 
-    public function revokeRoleFromUser($role)
+    public function removeRoleForUser($role)
     {
-        $this->getAuthorizationService()->revokeRoleFromUser($role, $this->selectedUser);
+        $this->getAuthorizationService()->removeRoleForUser($role, $this->selectedUser);
         $this->getCurrentRoles();
     }
 

@@ -12,25 +12,116 @@ use Trinavo\TrinaCrud\Models\ModelSchema;
 class PermissionsTab extends Component
 {
 
+    public ?string $selectedRole = null;
+    public string $modelFilter = '';
+    public array $roles = [];
+    public array $permissions = [];
 
-    protected $validationRules = [
-        'selectedModel' => 'required|string',
-        'selectedActions' => 'required|array|min:1',
-        'selectedRole' => 'required',
-    ];
+    /**
+     * @var string[]
+     */
+    public array $models = [];
 
-    protected $messages = [
-        'selectedModel.required' => 'Please select a model',
-        'selectedActions.required' => 'Please select at least one action',
-        'selectedActions.min' => 'Please select at least one action',
-        'selectedRole.required' => 'Please select a user or role',
-    ];
-
-
-    public function mount() {}
+    public function mount()
+    {
+        $this->loadRoles();
+        $this->loadModels();
+    }
 
     public function render()
     {
         return view('trina-crud::livewire.permissions-tab');
+    }
+
+    public function loadRoles()
+    {
+        $this->roles = $this->getAuthorizationService()->getAllRoles();
+    }
+
+    public function loadModels()
+    {
+        $this->models = collect($this->getModelService()->getSchema())->map(function (ModelSchema $model) {
+            return $model->getModelName();
+        })->toArray();
+    }
+
+
+    public function getAuthorizationService(): AuthorizationServiceInterface
+    {
+        return App::make(AuthorizationServiceInterface::class);
+    }
+
+    public function updatedModelFilter()
+    {
+        $this->loadPermissions();
+    }
+
+    public function loadPermissions()
+    {
+        $this->permissions = [];
+        foreach ($this->models as $model) {
+            $model = str_replace('\\', '.', $model);
+            if ($this->modelFilter && !str_contains(
+                strtolower($model),
+                strtolower(trim($this->modelFilter))
+            )) {
+                continue;
+            }
+            $read = $this->getAuthorizationService()->roleHasModelPermission(
+                $model,
+                CrudAction::READ,
+                $this->selectedRole
+            );
+            $create = $this->getAuthorizationService()->roleHasModelPermission(
+                $model,
+                CrudAction::CREATE,
+                $this->selectedRole
+            );
+            $update = $this->getAuthorizationService()->roleHasModelPermission(
+                $model,
+                CrudAction::UPDATE,
+                $this->selectedRole
+            );
+            $delete = $this->getAuthorizationService()->roleHasModelPermission(
+                $model,
+                CrudAction::DELETE,
+                $this->selectedRole
+            );
+            $this->permissions[$model] =
+                [
+                    CrudAction::READ->value => $read,
+                    CrudAction::CREATE->value => $create,
+                    CrudAction::UPDATE->value => $update,
+                    CrudAction::DELETE->value => $delete,
+                ];
+        }
+    }
+
+    public function getModelService(): ModelServiceInterface
+    {
+        return App::make(ModelServiceInterface::class);
+    }
+
+    public function togglePermission($model, $action)
+    {
+        $authService = $this->getAuthorizationService();
+
+        if ($authService->roleHasModelPermission($model, CrudAction::from($action), $this->selectedRole)) {
+            $authService->setRoleModelPermission(
+                $model,
+                CrudAction::from($action),
+                $this->selectedRole,
+                false
+            );
+        } else {
+            $authService->setRoleModelPermission(
+                $model,
+                CrudAction::from($action),
+                $this->selectedRole,
+                true
+            );
+        }
+
+        $this->loadPermissions();
     }
 }

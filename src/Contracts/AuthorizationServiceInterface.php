@@ -36,7 +36,7 @@ interface AuthorizationServiceInterface
 
     public function assignRoleToUser($role, int|Model $user): bool;
 
-    public function revokeRoleFromUser($role, int|Model $user): bool;
+    public function removeRoleForUser($role, int|Model $user): bool;
 
     public function getAllRoles(): array;
 

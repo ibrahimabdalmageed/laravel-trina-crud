@@ -20,7 +20,7 @@ trait HasCrud
         $fillable = $this->getFillable();
         $filteredFillable = [];
         foreach ($fillable as $field) {
-            if ($authorizationService->isAttributeAuthorized($this, $field, $action)) {
+            if ($authorizationService->authHasAttributePermission(get_class($this), $field, $action)) {
                 $filteredFillable[] = $field;
             }
         }

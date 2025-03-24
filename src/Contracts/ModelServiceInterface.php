@@ -153,7 +153,7 @@ interface ModelServiceInterface
     /**
      * Get the schema of all models
      * 
-     * @return array
+     * @return ModelSchema[]
      */
     public function getSchema(): array;
 

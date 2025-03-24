@@ -33,7 +33,7 @@ class AllowAllAuthorizationService implements AuthorizationServiceInterface
         return true;
     }
 
-    public function revokeRoleFromUser($role, int|Model $user): bool
+    public function removeRoleForUser($role, int|Model $user): bool
     {
         return true;
     }

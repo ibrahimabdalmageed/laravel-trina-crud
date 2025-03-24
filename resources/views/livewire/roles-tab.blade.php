@@ -7,11 +7,7 @@
     <button
         class="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md mb-6 transition duration-200 shadow-sm"
         wire:click="showCreateRoleModal">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-            <path fill-rule="evenodd"
-                d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
-                clip-rule="evenodd" />
-        </svg>
+        👑
         Create New Role
     </button>
 
@@ -27,10 +23,7 @@
                     <h3 class="text-xl font-bold text-gray-900 dark:text-white">Create New Role</h3>
                     <button class="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
                         wire:click="hideCreateRoleModal">
-                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M6 18L18 6M6 6l12 12" />
-                        </svg>
+                        ❌
                     </button>
                 </div>
 
@@ -69,34 +62,18 @@
                         <div class="flex items-center">
                             <div
                                 class="h-10 w-10 rounded-full bg-indigo-100 dark:bg-indigo-900 flex items-center justify-center mr-3">
-                                <svg xmlns="http://www.w3.org/2000/svg"
-                                    class="h-5 w-5 text-indigo-600 dark:text-indigo-300" viewBox="0 0 20 20"
-                                    fill="currentColor">
-                                    <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"
-                                        clip-rule="evenodd" />
-                                </svg>
+                                👑
                             </div>
                             <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ $role }}</h3>
                         </div>
                         <button class="text-red-500 hover:text-red-700 transition duration-200"
                             @click="if (confirm('Are you sure you want to delete the {{ $role }} role?')) { $wire.deleteRole('{{ $role }}') }">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20"
-                                fill="currentColor">
-                                <path fill-rule="evenodd"
-                                    d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"
-                                    clip-rule="evenodd" />
-                            </svg>
+                            ❌
                         </button>
                     </div>
                     <div class="mt-2">
                         <button
                             class="w-full text-sm text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 font-medium text-left flex items-center gap-1 transition duration-200">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20"
-                                fill="currentColor">
-                                <path
-                                    d="M5 4a1 1 0 00-2 0v7.268a2 2 0 000 3.464V16a1 1 0 102 0v-1.268a2 2 0 000-3.464V4zM11 4a1 1 0 10-2 0v1.268a2 2 0 000 3.464V16a1 1 0 102 0V8.732a2 2 0 000-3.464V4zM16 3a1 1 0 011 1v7.268a2 2 0 010 3.464V16a1 1 0 11-2 0v-1.268a2 2 0 010-3.464V4a1 1 0 011-1z" />
-                            </svg>
-                            Configure permissions
                         </button>
                     </div>
                 </div>
@@ -105,11 +82,7 @@
     @else
         <div
             class="flex flex-col items-center justify-center p-6 bg-gray-50 dark:bg-gray-800 border border-dashed border-gray-300 dark:border-gray-700 rounded-lg">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-gray-400 mb-2" fill="none"
-                viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-            </svg>
+            ❕
             <p class="text-gray-600 dark:text-gray-400 text-lg font-medium">No roles found</p>
             <p class="text-gray-500 dark:text-gray-500 text-sm mt-1">Create your first role to get started</p>
         </div>

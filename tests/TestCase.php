@@ -2,6 +2,7 @@
 
 namespace Trinavo\TrinaCrud\Tests;
 
+use Livewire\LivewireServiceProvider;
 use Mockery;
 use Orchestra\Testbench\TestCase as BaseTestCase;
 use Trinavo\TrinaCrud\Providers\TrinaCrudServiceProvider;
@@ -35,6 +36,7 @@ abstract class TestCase extends BaseTestCase
     {
         return [
             TrinaCrudServiceProvider::class,
+            LivewireServiceProvider::class,
         ];
     }
 
@@ -43,4 +45,4 @@ abstract class TestCase extends BaseTestCase
         Mockery::close();
         parent::tearDown();
     }
-} 
+}

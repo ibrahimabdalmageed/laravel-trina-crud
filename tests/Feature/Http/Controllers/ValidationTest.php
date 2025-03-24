@@ -21,6 +21,8 @@ class ValidationTest extends TrinaTestCase
         // Create test tables and models
         $this->createTestModels();
 
+        $this->withoutMiddleware();
+
         $this->mockAuthService();
         $this->mockOwnershipService();
     }
@@ -116,6 +118,7 @@ class ValidationTest extends TrinaTestCase
      */
     public function testUpdateModelWithValidData()
     {
+
         // Create test data
         $model = app('validation_model')->create([
             'name' => 'Original Name',
@@ -181,10 +184,10 @@ class ValidationTest extends TrinaTestCase
 class ValidationModel extends Model
 {
     use HasCrud;
-    
+
     protected $table = 'validation_models';
     protected $fillable = ['id', 'name', 'price', 'description', 'created_at', 'updated_at'];
-    
+
     /**
      * Define validation rules for CRUD operations
      * 
@@ -200,7 +203,7 @@ class ValidationModel extends Model
                 'description' => 'nullable|string'
             ];
         }
-        
+
         if ($action === CrudAction::UPDATE) {
             return [
                 'name' => 'sometimes|string|min:3|max:255',
@@ -208,7 +211,7 @@ class ValidationModel extends Model
                 'description' => 'nullable|string'
             ];
         }
-        
+
         return [];
     }
 }

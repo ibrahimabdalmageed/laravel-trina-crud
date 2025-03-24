@@ -16,10 +16,11 @@ class TrinaTestCase extends TestCase
     protected function mockAuthService()
     {
         $this->authService = Mockery::mock(AuthorizationServiceInterface::class);
-        $this->authService->shouldReceive('hasPermissionTo')->andReturn(true);
-        $this->authService->shouldReceive('hasModelPermission')->andReturn(true);
-        $this->authService->shouldReceive('isAttributeAuthorized')->andReturn(true);
+        $this->authService->shouldReceive('authHasModelPermission')->andReturn(true);
+        $this->authService->shouldReceive('authHasAttributePermission')->andReturn(true);
+        $this->authService->shouldReceive('getAuthUser')->andReturn(null);
         $this->authService->shouldReceive('getUser')->andReturn(null);
+        $this->authService->shouldReceive('userHasModelPermission')->andReturn(true);
 
 
         // Bind the mock to the container

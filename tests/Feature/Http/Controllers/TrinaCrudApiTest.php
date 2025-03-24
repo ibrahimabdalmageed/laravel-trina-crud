@@ -24,6 +24,8 @@ class TrinaCrudApiTest extends TrinaTestCase
         // Create test tables and models
         $this->createTestModels();
 
+        $this->withoutMiddleware();
+
         $this->mockAuthService();
         $this->mockOwnershipService();
     }

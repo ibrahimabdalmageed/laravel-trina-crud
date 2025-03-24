@@ -195,11 +195,6 @@ class ModelService implements ModelServiceInterface
      */
     public function update(string $modelName, int $id, array $data): Model
     {
-        $user = $this->authorizationService->getAuthUser();
-
-        if (!$user) {
-            throw new NotFoundHttpException('User not found');
-        }
 
         if (!$this->authorizationService->authHasModelPermission($modelName, CrudAction::UPDATE)) {
             throw new NotFoundHttpException('You are not authorized to update this model');

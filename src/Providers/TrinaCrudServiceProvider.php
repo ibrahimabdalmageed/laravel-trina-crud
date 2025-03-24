@@ -36,13 +36,10 @@ class TrinaCrudServiceProvider extends ServiceProvider
         // Load migrations
         $this->loadMigrationsFrom(__DIR__ . '/../../database/migrations');
 
-        // Register Livewire components
-        if (class_exists(Livewire::class)) {
-            Livewire::component('trina-crud::permissions-manager', PermissionsManager::class);
-            Livewire::component('trina-crud::permissions-tab', PermissionsTab::class);
-            Livewire::component('trina-crud::roles-tab', RolesTab::class);
-            Livewire::component('trina-crud::user-roles-tab', UserRolesTab::class);
-        }
+        Livewire::component('trina-crud::permissions-manager', PermissionsManager::class);
+        Livewire::component('trina-crud::permissions-tab', PermissionsTab::class);
+        Livewire::component('trina-crud::roles-tab', RolesTab::class);
+        Livewire::component('trina-crud::user-roles-tab', UserRolesTab::class);
 
         // Publish configuration (optional)
         $this->publishes([

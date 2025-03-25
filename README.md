@@ -214,6 +214,36 @@ public static function validationRules()
 }
 ```
 
+## API Documentation with OpenAPI
+
+TrinaCrud automatically generates OpenAPI 3.0 documentation for all your models. This gives you:
+
+- Complete API documentation in standard formats
+- Client SDK generation capabilities
+- Testing support
+
+### Accessing the Documentation
+
+The OpenAPI documentation is available in two formats:
+
+- JSON format: `/api/{route_prefix}/openapi.json`
+- YAML format: `/api/{route_prefix}/openapi.yaml`
+
+Add `?download=true` parameter to download the specification file.
+
+### API Specification Format
+
+The OpenAPI documentation follows standard conventions with:
+
+- Models defined using `$ref: '#/components/schemas/ModelName'` format
+- Complete endpoint documentation for each CRUD operation
+- Auth requirements and error responses
+- Field type detection based on naming conventions
+
+### Client Generation
+
+With the OpenAPI specification, you can generate client libraries for your API in various languages using tools like [OpenAPI Generator](https://github.com/OpenAPITools/openapi-generator).
+
 ## Documentation
 
 For detailed documentation, visit the [docs directory](docs/index.md).

@@ -12,10 +12,16 @@ By using TrinaCrud, you can reduce boilerplate code and focus on building your a
 - 🔒 **Built-in Security**: Integrated with Spatie Permissions for robust authorization
 - 🧩 **Flexible**: Customizable routes, middleware, and validation
 - 📱 **API Ready**: Perfect for building backends for SPA and mobile applications
-- 🛠️ **Permission Management**: Visual interface for managing roles and permissions
+- 🛠️ **Permission Management UI**: Visual interface for managing roles, permissions, and user assignments
 - 📊 **Single Source of Truth**: Your model and database schema drive validation and security
 - 🔄 **Auto-Generated Validation**: Rules automatically derived from database schema
 - 👤 **Ownership Control**: Integration with the Ownable package for user-based data access
+
+## Permission Manager UI
+
+The Permission Manager UI is a visual interface for managing roles, permissions, and user assignments.
+
+![Permission Manager UI](https://raw.githubusercontent.com/doonfrs/laravel-trina-crud/refs/heads/main/docs/assets/images/admin-ui.gif)
 
 ## Documentation Index
 
@@ -49,9 +55,7 @@ By using TrinaCrud, you can reduce boilerplate code and focus on building your a
 
 ### User Interface
 
-- [Admin Permissions UI](pages/admin-ui.md)
-- [Permission Matrix Management](pages/permission-matrix.md)
-- [Role Assignment Interface](pages/role-assignment.md)
+- [Admin Permissions UI](pages/admin-ui.md): Comprehensive UI for managing all authorization aspects
 
 ### Advanced Topics
 

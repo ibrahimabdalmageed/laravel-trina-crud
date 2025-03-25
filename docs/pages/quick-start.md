@@ -274,6 +274,19 @@ With the Ownable trait added to your model in Step 6, TrinaCrud will automatical
 - Filter queries so users only see resources they own
 - Handle all ownership-related logic behind the scenes
 
+## Permission Manager UI
+
+TrinaCrud includes a powerful Permission Manager UI that helps you manage all aspects of your application's authorization system:
+
+- **Role Management**: Create, edit, and delete roles
+- **User Role Assignment**: Assign roles to users through an intuitive interface
+- **Model Permissions**: Configure which roles can add, edit, delete, or read specific models
+- **Field-Level Permissions**: Fine-grained control over which attributes/fields each role can access
+
+The UI makes it easy to manage complex permission structures without writing code. Simply visit `/trina-crud/admin/permissions` in your browser (after authenticating as an admin).
+
+![Permission Manager UI](https://raw.githubusercontent.com/doonfrs/laravel-trina-crud/refs/heads/main/docs/assets/images/admin-ui.gif)
+
 ## What's Next?
 
 Now that you have a basic CRUD API set up, you might want to:

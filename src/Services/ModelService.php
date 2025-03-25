@@ -595,7 +595,7 @@ class ModelService implements ModelServiceInterface
      * @param string|null $modelName
      * @return ModelSchema[]
      */
-    public function getSchema(?string $modelName = null): array
+    public function getSchema(?string $modelName = null, bool $authorizedOnly = false): array
     {
         // Sanitize the model name to prevent injection attacks
         if ($modelName !== null) {
@@ -648,6 +648,23 @@ class ModelService implements ModelServiceInterface
                     if (!$modelSchema) {
                         continue;
                     }
+
+                    if ($authorizedOnly) {
+                        if (
+                            !(
+                                $this->authorizationService->authHasModelPermission($modelSchema->getModelName(), CrudAction::READ)
+                                ||
+                                $this->authorizationService->authHasModelPermission($modelSchema->getModelName(), CrudAction::CREATE)
+                                ||
+                                $this->authorizationService->authHasModelPermission($modelSchema->getModelName(), CrudAction::UPDATE)
+                                ||
+                                $this->authorizationService->authHasModelPermission($modelSchema->getModelName(), CrudAction::DELETE)
+                            )
+                        ) {
+                            continue;
+                        }
+                    }
+
                     $models[] = $modelSchema;
                 } catch (\Throwable $e) {
                     // Skip files that cause errors
@@ -657,6 +674,7 @@ class ModelService implements ModelServiceInterface
         }
         return $models;
     }
+
 
     /**
      * Parse a model file to extract model information

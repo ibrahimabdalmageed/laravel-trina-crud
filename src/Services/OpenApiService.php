@@ -2,8 +2,8 @@
 
 namespace Trinavo\TrinaCrud\Services;
 
-use Illuminate\Support\Str;
 use Trinavo\TrinaCrud\Models\ModelSchema;
+use Illuminate\Support\Facades\Schema;
 
 class OpenApiService
 {
@@ -31,13 +31,6 @@ class OpenApiService
             'paths' => [],
             'components' => [
                 'schemas' => [],
-                'securitySchemes' => [
-                    'bearerAuth' => [
-                        'type' => 'http',
-                        'scheme' => 'bearer',
-                        'bearerFormat' => 'JWT',
-                    ],
-                ],
             ],
         ];
 
@@ -45,9 +38,35 @@ class OpenApiService
             $fields = $model->getAuthorizedFields();
             $properties = [];
 
+            // Try to get the model class to access schema information
+            $modelClass = "\\{$model->getModelName()}";
+            $modelInstance = null;
+
+            try {
+                if (class_exists($modelClass)) {
+                    $modelInstance = new $modelClass();
+                }
+            } catch (\Exception $e) {
+                // If we can't instantiate the model, we'll use the basic field detection
+            }
+
+            // Get table schema information if available
+            $table = $modelInstance ? $modelInstance->getTable() : null;
+            $columns = null;
+
+            $columns = Schema::getColumns($table);
+
             foreach ($fields as $field) {
-                // Determine field type based on common Laravel field naming conventions
-                $properties[$field] = $this->getFieldDefinition($field);
+                // If we have schema information, use that to determine field type
+                if ($columns && isset($columns[$field])) {
+                    $column = $columns[$field];
+                    $properties[$field] = $this->getFieldDefinitionFromColumn($column);
+                } else {
+                    $properties[$field] = [
+                        'type' => 'string',
+                        'description' => "Value of type: $field"
+                    ];
+                }
             }
 
             $itemOpenApi = [
@@ -59,14 +78,12 @@ class OpenApiService
             $openApi['components']['schemas'][$model->getModelName()] = $itemOpenApi;
 
             // Generate paths for this model
-            $resourceName = $model->getModelName();
-            $resourceName = str_replace('\\', '.', $resourceName);
+            $resourceName = $this->getResourceName($model->getModelName());
             $this->addResourcePaths($openApi['paths'], $resourceName, $model->getModelName());
         }
 
         return $openApi;
     }
-
 
     /**
      * Add paths for a resource
@@ -148,8 +165,7 @@ class OpenApiService
                     ],
                     '401' => ['description' => 'Unauthorized'],
                     '403' => ['description' => 'Forbidden'],
-                ],
-                'security' => [['bearerAuth' => []]]
+                ]
             ],
             'post' => [
                 'summary' => "Create a new {$modelName}",
@@ -186,8 +202,7 @@ class OpenApiService
                     '401' => ['description' => 'Unauthorized'],
                     '403' => ['description' => 'Forbidden'],
                     '422' => ['description' => 'Validation error'],
-                ],
-                'security' => [['bearerAuth' => []]]
+                ]
             ]
         ];
 
@@ -234,7 +249,6 @@ class OpenApiService
                     '403' => ['description' => 'Forbidden'],
                     '404' => ['description' => 'Not found'],
                 ],
-                'security' => [['bearerAuth' => []]]
             ],
             'put' => [
                 'summary' => "Update a {$modelName}",
@@ -282,7 +296,6 @@ class OpenApiService
                     '404' => ['description' => 'Not found'],
                     '422' => ['description' => 'Validation error'],
                 ],
-                'security' => [['bearerAuth' => []]]
             ],
             'delete' => [
                 'summary' => "Delete a {$modelName}",
@@ -315,8 +328,7 @@ class OpenApiService
                     '401' => ['description' => 'Unauthorized'],
                     '403' => ['description' => 'Forbidden'],
                     '404' => ['description' => 'Not found'],
-                ],
-                'security' => [['bearerAuth' => []]]
+                ]
             ]
         ];
 
@@ -347,82 +359,110 @@ class OpenApiService
                     ],
                     '401' => ['description' => 'Unauthorized'],
                     '403' => ['description' => 'Forbidden'],
-                ],
-                'security' => [['bearerAuth' => []]]
+                ]
             ]
         ];
     }
 
     /**
-     * Get field definition based on field name
+     * Get field definition from database column schema
      * 
-     * @param string $field
+     * @param \Doctrine\DBAL\Schema\Column $column
      * @return array
      */
-    private function getFieldDefinition(string $field): array
+    private function getFieldDefinitionFromColumn($columnInfo): array
     {
-        // Define field patterns and their corresponding OpenAPI types
-        $fieldPatterns = [
-            // IDs and foreign keys
-            '/^id$|_id$/' => [
-                'type' => 'integer',
-                'format' => 'int64',
-                'description' => 'Unique identifier'
-            ],
 
-            // Dates
-            '/^(created_at|updated_at|deleted_at|.*_date|.*_at)$/' => [
-                'type' => 'string',
-                'format' => 'date-time',
-                'description' => 'Timestamp'
-            ],
 
-            // Boolean fields
-            '/^(is_|has_|can_|should_)/' => [
-                'type' => 'boolean',
-                'description' => 'Boolean flag'
-            ],
+        $colType = $columnInfo['type_name'];
 
-            // Numeric fields
-            '/^(count_|amount_|price|cost|quantity|number|num_|total)/' => [
-                'type' => 'number',
-                'format' => 'double',
-                'description' => 'Numeric value'
-            ],
-
-            // Email addresses
-            '/^email$|_email$/' => [
-                'type' => 'string',
-                'format' => 'email',
-                'description' => 'Email address'
-            ],
-
-            // URLs
-            '/^url$|_url$|link$|_link$/' => [
-                'type' => 'string',
-                'format' => 'uri',
-                'description' => 'URL'
-            ],
-
-            // JSON data
-            '/^json_|_json$|data$|settings$|options$|config$|meta$/' => [
-                'type' => 'object',
-                'additionalProperties' => true,
-                'description' => 'JSON data'
-            ]
-        ];
-
-        // Check field against patterns
-        foreach ($fieldPatterns as $pattern => $definition) {
-            if (preg_match($pattern, $field)) {
-                return $definition;
-            }
+        $isBoolean = false;
+        if ($colType === 'boolean' || $colType === 'bool') {
+            $isBoolean = true;
+        } elseif ($colType === 'tinyint' && strpos($colType, 'tinyint(1)') !== false) {
+            $isBoolean = true;
         }
 
-        // Default to string if no pattern matches
-        return [
-            'type' => 'string',
-            'description' => "The $field field"
-        ];
+        // Determine field type based on database column type (similar to HasCrud::buildValidationRules)
+
+        // Detect boolean fields
+        if ($isBoolean) {
+            $definition['type'] = 'boolean';
+            $definition['description'] = 'Boolean value';
+            return $definition;
+        }
+
+
+        // Handle other types
+        switch ($colType) {
+            case 'bigint':
+            case 'integer':
+            case 'smallint':
+                $definition['type'] = 'integer';
+                $definition['format'] = ($colType === 'bigint') ? 'int64' : 'int32';
+                $definition['description'] = 'Integer value';
+                break;
+
+            case 'decimal':
+            case 'float':
+                $definition['type'] = 'number';
+                $definition['format'] = ($colType === 'decimal') ? 'decimal' : 'float';
+                $definition['description'] = 'Numeric value';
+                break;
+            case 'date':
+                $definition['type'] = 'string';
+                $definition['format'] = 'date';
+                $definition['description'] = 'Date value (YYYY-MM-DD)';
+                break;
+
+            case 'datetime':
+            case 'datetimetz':
+            case 'timestamp':
+                $definition['type'] = 'string';
+                $definition['format'] = 'date-time';
+                $definition['description'] = 'Date and time value';
+                break;
+
+            case 'string':
+            case 'text':
+                $definition['type'] = 'string';
+
+                $length = 0;
+                if (
+                    preg_match('/varchar\((\d+)\)/', $colType, $matches) ||
+                    preg_match('/char\((\d+)\)/', $colType, $matches)
+                ) {
+                    $length = (int)$matches[1];
+                }
+
+                $definition['maxLength'] = $length;
+                $definition['description'] = "String value (max $length characters)";
+                break;
+
+            case 'json':
+            case 'array':
+                $definition['type'] = 'object';
+                $definition['additionalProperties'] = true;
+                $definition['description'] = 'JSON data';
+                break;
+
+            default:
+                $definition['type'] = 'string';
+                $definition['description'] = "Value of type: {$colType}";
+        }
+
+        return $definition;
+    }
+
+
+    /**
+     * Get resource name from model name
+     * 
+     * @param string $modelName
+     * @return string
+     */
+    private function getResourceName(string $modelName): string
+    {
+        return str_replace('\\', '.', $modelName);
     }
 }

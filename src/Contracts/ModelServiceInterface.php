@@ -157,7 +157,7 @@ interface ModelServiceInterface
      * @param string|null $modelName
      * @return ModelSchema[]
      */
-    public function getSchema(?string $modelName = null): array;
+    public function getSchema(?string $modelName = null, bool $authorizedOnly = false): array;
 
     /**
      * Parse a model file to extract model information

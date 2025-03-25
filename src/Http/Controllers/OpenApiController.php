@@ -40,7 +40,7 @@ class OpenApiController extends Controller
      */
     public function json(Request $request): JsonResponse
     {
-        $models = $this->modelService->getSchema();
+        $models = $this->modelService->getSchema(authorizedOnly: true);
         $openApi = $this->openApiService->generateOpenApi($models);
 
         // Check if download parameter is present
@@ -60,8 +60,14 @@ class OpenApiController extends Controller
      */
     public function yaml(Request $request)
     {
-        $models = $this->modelService->getSchema();
+        $models = $this->modelService->getSchema(authorizedOnly: true);
         $openApi = $this->openApiService->generateOpenApi($models);
+
+        foreach ($openApi['components']['schemas'] as $key => $schema) {
+            if (isset($schema['properties']) && !$schema['properties']) {
+                $openApi['components']['schemas'][$key]['properties'] = [];
+            }
+        }
 
         // Convert to YAML using Symfony YAML component
         $yaml = \Symfony\Component\Yaml\Yaml::dump($openApi, 10, 2, \Symfony\Component\Yaml\Yaml::DUMP_MULTI_LINE_LITERAL_BLOCK);

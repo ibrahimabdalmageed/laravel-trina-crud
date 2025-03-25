@@ -61,6 +61,9 @@ class PermissionsTab extends Component
     public function loadPermissions()
     {
         $this->permissions = [];
+        if (!$this->selectedRole) {
+            return;
+        }
         foreach ($this->models as $model) {
             $model = str_replace('\\', '.', $model);
             if ($this->modelFilter && !str_contains(

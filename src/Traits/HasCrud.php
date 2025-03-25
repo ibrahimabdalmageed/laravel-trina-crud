@@ -166,10 +166,4 @@ trait HasCrud
 
         return implode('|', $rules);
     }
-
-    public function getAllFields(): array
-    {
-        $columns = Schema::getColumnListing($this->getTable());
-        return $columns;
-    }
 }

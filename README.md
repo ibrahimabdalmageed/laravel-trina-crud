@@ -11,6 +11,14 @@ TrinaCrud is a Laravel package for rapid CRUD API generation with built-in autho
 - 🧩 **Flexible**: Customizable routes, middleware, and validation
 - 📱 **API Ready**: Perfect for building backends for SPA and mobile applications
 - 🛠️ **Permission Management**: Visual interface for managing roles and permissions
+- 📊 **Single Source of Truth**: Your model and database schema drive validation and security
+- 🔄 **Auto-Generated Validation**: Rules automatically derived from database schema
+
+## Requirements
+
+- PHP 8.1 or higher
+- Laravel 11.0 or higher
+- Composer
 
 ## Installation
 
@@ -36,10 +44,16 @@ composer require spatie/laravel-permission
 
 Follow the [Spatie Permission installation instructions](https://spatie.be/docs/laravel-permission/v5/installation-laravel).
 
-### 2. Install Ownable Package
+### 2. Install Ownable Package (Optional but Recommended)
 
 ```bash
 composer require trinavo/laravel-ownable
+```
+
+Run the migrations:
+
+```bash
+php artisan migrate
 ```
 
 ### 3. Add the Trait to Your Model
@@ -51,23 +65,15 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Trinavo\TrinaCrud\Traits\HasCrud;
+use Trinavo\Ownable\Traits\Ownable; // Optional for user-based access control
 
 class Product extends Model
 {
     use HasCrud;
+    use Ownable; // Optional
     
     // Define which attributes are mass assignable
     protected $fillable = ['name', 'description', 'price'];
-    
-    // Optional: Define validation rules
-    public static function validationRules()
-    {
-        return [
-            'name' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'price' => 'required|numeric|min:0',
-        ];
-    }
 }
 ```
 
@@ -79,6 +85,70 @@ That's it! Your model now has CRUD API endpoints available at:
 - `PUT /api/{route_prefix}/products/{id}` - Update a product
 - `DELETE /api/{route_prefix}/products/{id}` - Delete a product
 - `GET /api/{route_prefix}/products/schema` - Get model schema information
+
+## The HasCrud Trait
+
+The `HasCrud` trait is a powerful utility that uses your model as the single source of truth:
+
+### Single Source of Truth
+
+The trait utilizes your existing Laravel model definition (including table schema and fillable attributes) to:
+
+- Generate appropriate validation rules automatically
+- Apply proper security restrictions based on user permissions
+- Handle CRUD operations with minimal configuration
+
+### Automatic Schema-Based Validation
+
+TrinaCrud intelligently generates validation rules based on your database schema:
+
+- Column types are mapped to appropriate Laravel validation rules
+- Nullability constraints are respected
+- String length limits are applied automatically
+- Numeric precision and scale are preserved
+- This makes development faster and reduces inconsistencies between your database and validation logic
+
+Example of automatically generated rules for a `products` table:
+
+```php
+[
+    'name' => 'required|string|max:255',
+    'price' => 'required|numeric|decimal:2',
+    'description' => 'nullable|string',
+    'is_active' => 'boolean',
+]
+```
+
+### Custom Validation Rules
+
+While automatic rule generation is convenient, you can always override it:
+
+```php
+// Override getCrudRules method in your model
+public function getCrudRules(\Trinavo\TrinaCrud\Enums\CrudAction $action): array
+{
+    // Call parent method to get the auto-generated rules
+    $rules = parent::getCrudRules($action);
+    
+    // Add or modify rules as needed
+    if ($action === \Trinavo\TrinaCrud\Enums\CrudAction::CREATE) {
+        $rules['name'] = 'required|string|max:255|unique:products';
+    }
+    
+    return $rules;
+}
+```
+
+### Model & Attribute Level Security
+
+TrinaCrud provides fine-grained security control:
+
+- **Model Level**: Control who can create, read, update, or delete entire models
+- **Attribute Level**: Control which specific attributes a user can view or modify
+- **Action-Specific**: Different permissions for different CRUD operations
+- **UI Management**: Permissions can be easily managed through the included admin interface
+
+This granular approach ensures users only see and modify data they're authorized to access.
 
 ## Permission Management
 
@@ -104,7 +174,7 @@ The permission management system uses Livewire components for a smooth, interact
 TrinaCrud takes security seriously with:
 
 - **Route Protection**: All routes are protected by configurable middleware
-- **Admin Routes**: Administrative functions like model synchronization use stricter middleware
+- **Admin Routes**: Administrative functions use stricter middleware
 - **Customizable Authentication**: Configure authentication requirements through the config file
 - **Permission-Based Access**: Granular control over who can perform which operations
 - **Data Ownership**: Integration with the Ownable package to restrict access based on ownership
@@ -143,6 +213,10 @@ public static function validationRules()
     ];
 }
 ```
+
+## Documentation
+
+For detailed documentation, visit the [docs directory](docs/index.md).
 
 ## Support the Development
 

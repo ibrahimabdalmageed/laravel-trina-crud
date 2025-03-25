@@ -575,15 +575,24 @@ class ModelService implements ModelServiceInterface
     /**
      * Get the schema of all models
      *
+     * @param string|null $modelName
      * @return ModelSchema[]
      */
-    public function getSchema(): array
+    public function getSchema(?string $modelName = null): array
     {
         //scan all model paths from config model_paths
         $models = [];
         foreach (config('trina-crud.model_paths') as $path) {
             $namespace = null;
-            $files = glob($path . '/*.php');
+
+            if ($modelName) {
+                //get the file name from the model name
+                $modelName = explode('.', $modelName);
+                $modelName = $modelName[count($modelName) - 1];
+                $files = glob($path . '/' . $modelName . '.php');
+            } else {
+                $files = glob($path . '/*.php');
+            }
             foreach ($files as $file) {
                 $modelSchema = $this->parseModelFile($file, $namespace);
                 if (!$modelSchema) {
@@ -629,6 +638,8 @@ class ModelService implements ModelServiceInterface
             return null;
         }
         $fields = Schema::getColumnListing($model->getTable());
+
+        $fullClassName = str_replace('\\', '.', $fullClassName);
 
         return new ModelSchema($fullClassName, $fields);
     }

@@ -154,9 +154,10 @@ interface ModelServiceInterface
     /**
      * Get the schema of all models
      * 
+     * @param string|null $modelName
      * @return ModelSchema[]
      */
-    public function getSchema(): array;
+    public function getSchema(?string $modelName = null): array;
 
     /**
      * Parse a model file to extract model information

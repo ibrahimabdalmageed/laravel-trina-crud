@@ -3,6 +3,8 @@
 namespace Trinavo\TrinaCrud\Models;
 
 use JsonSerializable;
+use Trinavo\TrinaCrud\Contracts\AuthorizationServiceInterface;
+use Trinavo\TrinaCrud\Enums\CrudAction;
 
 class ModelSchema implements JsonSerializable
 {
@@ -81,5 +83,22 @@ class ModelSchema implements JsonSerializable
     public function toJson(): string
     {
         return json_encode($this->jsonSerialize());
+    }
+
+    public function getAuthorizedFields(): array
+    {
+        $allFields = $this->getAllFields();
+        $authorizationService = app(AuthorizationServiceInterface::class);
+        $authorizedFields = [];
+        foreach ($allFields as $field) {
+            if (
+                $authorizationService->authHasAttributePermission($this->modelName, $field, CrudAction::READ)
+                || $authorizationService->authHasAttributePermission($this->modelName, $field, CrudAction::UPDATE)
+                || $authorizationService->authHasAttributePermission($this->modelName, $field, CrudAction::CREATE)
+            ) {
+                $authorizedFields[] = $field;
+            }
+        }
+        return $authorizedFields;
     }
 }

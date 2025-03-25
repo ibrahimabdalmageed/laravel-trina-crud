@@ -9,6 +9,7 @@ Route::prefix(config('trina-crud.route_prefix'))
     ->middleware(config('trina-crud.middleware', []))
     ->group(function () {
         Route::get('/get-schema', [TrinaCrudController::class, 'getSchema']);
+        Route::get('/{model}/get-schema', [TrinaCrudController::class, 'getSchema']);
         Route::get('/{model}', [TrinaCrudModelController::class, 'index']);
         Route::get('/{model}/{id}', [TrinaCrudModelController::class, 'show']);
         Route::post('/{model}', [TrinaCrudModelController::class, 'store']);

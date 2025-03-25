@@ -3,7 +3,6 @@
 namespace Trinavo\TrinaCrud\Traits;
 
 use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Facades\DB;
 use Trinavo\TrinaCrud\Contracts\AuthorizationServiceInterface;
 use Trinavo\TrinaCrud\Enums\CrudAction;
 

@@ -40,10 +40,6 @@ class ModelServiceTest extends TrinaTestCase
         // Test with class name
         $result = $this->modelService->verifyModel(ValidTestModel::class);
         $this->assertTrue($result, 'Should verify a valid model class');
-
-        // Test with container binding
-        $result = $this->modelService->verifyModel('valid_model');
-        $this->assertTrue($result, 'Should verify a valid model from container binding');
     }
 
     /**

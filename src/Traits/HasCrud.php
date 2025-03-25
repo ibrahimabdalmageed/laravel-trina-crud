@@ -18,7 +18,7 @@ trait HasCrud
     {
         $authorizationService = app(AuthorizationServiceInterface::class);
 
-        $fillable = $this->getFillable();
+        $fillable = Schema::getColumnListing($this->getTable());
         $filteredFillable = [];
         foreach ($fillable as $field) {
             if ($authorizationService->authHasAttributePermission(get_class($this), $field, $action)) {

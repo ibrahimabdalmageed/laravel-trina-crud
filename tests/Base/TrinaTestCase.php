@@ -41,5 +41,7 @@ class TrinaTestCase extends TestCase
         $this->app->singleton(OwnershipServiceInterface::class, function ($app) {
             return $this->ownershipService;
         });
+
+        config(['trina-crud.allowed_model_namespaces' => ['Trinavo\\TrinaCrud']]);
     }
 }

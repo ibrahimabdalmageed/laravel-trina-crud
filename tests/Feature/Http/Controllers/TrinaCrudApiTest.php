@@ -40,7 +40,8 @@ class TrinaCrudApiTest extends TrinaTestCase
         app('product_model')->create(['name' => 'Product 2', 'price' => 200, 'description' => 'Description 2']);
         app('product_model')->create(['name' => 'Product 3', 'price' => 300, 'description' => 'Description 3']);
         // Make API request
-        $response = $this->getJson('/api/crud/product_model');
+        $modelName = str_replace('\\', '.', ProductModel::class);
+        $response = $this->getJson('/api/crud/' . $modelName);
 
         // Assert response
         $response->assertStatus(200)
@@ -71,7 +72,8 @@ class TrinaCrudApiTest extends TrinaTestCase
         app('product_model')->create(['name' => 'Product 2', 'price' => 200, 'description' => 'Description 2']);
 
         // Make API request with attributes parameter
-        $response = $this->getJson('/api/crud/product_model?attributes[]=name&attributes[]=price');
+        $modelName = str_replace('\\', '.', ProductModel::class);
+        $response = $this->getJson('/api/crud/' . $modelName . '?attributes[]=name&attributes[]=price');
 
         // Assert response
         $response->assertStatus(200)
@@ -98,7 +100,8 @@ class TrinaCrudApiTest extends TrinaTestCase
         ProductModel::create(['name' => 'Ultra Phone', 'price' => 1200, 'description' => 'Flagship']);
 
         // Test 'between' operator
-        $response = $this->getJson('/api/crud/product_model?filters[price][operator]=between&filters[price][value][]=200&filters[price][value][]=900');
+        $modelName = str_replace('\\', '.', ProductModel::class);
+        $response = $this->getJson('/api/crud/' . $modelName . '?filters[price][operator]=between&filters[price][value][]=200&filters[price][value][]=900');
 
         $response->assertStatus(200)
             ->assertJsonCount(2, 'data')
@@ -106,13 +109,13 @@ class TrinaCrudApiTest extends TrinaTestCase
             ->assertJsonPath('data.1.name', 'Premium Phone');
 
         // Test 'like' operator
-        $response = $this->getJson('/api/crud/product_model?filters[name][operator]=like&filters[name][value]=%Phone%');
+        $response = $this->getJson('/api/crud/' . $modelName . '?filters[name][operator]=like&filters[name][value]=%Phone%');
 
         $response->assertStatus(200)
             ->assertJsonCount(4, 'data');
 
         // Test multiple filters
-        $response = $this->getJson('/api/crud/product_model?filters[price][operator]=>&filters[price][value]=500&filters[name][operator]=like&filters[name][value]=%Phone%');
+        $response = $this->getJson('/api/crud/' . $modelName . '?filters[price][operator]=>&filters[price][value]=500&filters[name][operator]=like&filters[name][value]=%Phone%');
 
         $response->assertStatus(200)
             ->assertJsonCount(2, 'data')
@@ -133,7 +136,8 @@ class TrinaCrudApiTest extends TrinaTestCase
         ProductModel::create(['name' => 'Ultra Phone', 'price' => 1200, 'description' => 'Flagship']);
 
         // Test 'between' operator
-        $response = $this->json('GET', '/api/crud/product_model', [
+        $modelName = str_replace('\\', '.', ProductModel::class);
+        $response = $this->json('GET', '/api/crud/' . $modelName, [
 
             'filters' => [
                 'price' => [
@@ -149,7 +153,7 @@ class TrinaCrudApiTest extends TrinaTestCase
             ->assertJsonPath('data.1.name', 'Premium Phone');
 
         // Test 'like' operator
-        $response = $this->json('GET', '/api/crud/product_model', ['filters' => [
+        $response = $this->json('GET', '/api/crud/' . $modelName, ['filters' => [
             'name' => [
                 'operator' => 'like',
                 'value' => '%Phone%'
@@ -160,7 +164,7 @@ class TrinaCrudApiTest extends TrinaTestCase
             ->assertJsonCount(4, 'data');
 
         // Test multiple filters
-        $response = $this->json('GET', '/api/crud/product_model', ['filters' => [
+        $response = $this->json('GET', '/api/crud/' . $modelName, ['filters' => [
             'price' => [
                 'operator' => '>=',
                 'value' => 500
@@ -201,7 +205,8 @@ class TrinaCrudApiTest extends TrinaTestCase
         ]);
 
         // Make API request with relationship
-        $response = $this->getJson('/api/crud/product_model?with=category');
+        $modelName = str_replace('\\', '.', ProductModel::class);
+        $response = $this->getJson('/api/crud/' . $modelName . '?with=category');
 
         // Assert response
         $response->assertStatus(200)
@@ -256,10 +261,11 @@ class TrinaCrudApiTest extends TrinaTestCase
             'category_id' => $category2->id
         ]);
 
+        $modelName = str_replace('\\', '.', ProductModel::class);
         // Filter by category name
         $response = $this->json(
             'GET',
-            '/api/crud/product_model',
+            '/api/crud/' . $modelName,
             [
                 'with' => 'category',
                 'filters' => [
@@ -287,7 +293,8 @@ class TrinaCrudApiTest extends TrinaTestCase
         $product = app('product_model')->create(['name' => 'Test Product', 'price' => 150, 'description' => 'Test Description']);
 
         // Make API request
-        $response = $this->getJson("/api/crud/product_model/{$product->id}");
+        $modelName = str_replace('\\', '.', ProductModel::class);
+        $response = $this->getJson("/api/crud/{$modelName}/{$product->id}");
 
         // Assert response
         $response->assertStatus(200)
@@ -312,7 +319,8 @@ class TrinaCrudApiTest extends TrinaTestCase
         ];
 
         // Make API request
-        $response = $this->postJson('/api/crud/product_model', $data);
+        $modelName = str_replace('\\', '.', ProductModel::class);
+        $response = $this->postJson('/api/crud/' . $modelName, $data);
 
         // Assert response
         $response->assertStatus(201)
@@ -341,7 +349,8 @@ class TrinaCrudApiTest extends TrinaTestCase
         ];
 
         // Make API request
-        $response = $this->putJson("/api/crud/product_model/{$product->id}", $data);
+        $modelName = str_replace('\\', '.', ProductModel::class);
+        $response = $this->putJson("/api/crud/{$modelName}/{$product->id}", $data);
 
         // Assert response
         $response->assertStatus(200)
@@ -368,8 +377,9 @@ class TrinaCrudApiTest extends TrinaTestCase
         // Create test data
         $product = app('product_model')->create(['name' => 'Delete Me', 'price' => 100, 'description' => 'To be deleted']);
 
+        $modelName = str_replace('\\', '.', ProductModel::class);
         // Make API request
-        $response = $this->deleteJson("/api/crud/product_model/{$product->id}");
+        $response = $this->deleteJson("/api/crud/{$modelName}/{$product->id}");
 
         // Assert response
         $response->assertStatus(200)

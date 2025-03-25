@@ -539,16 +539,6 @@ class ModelService implements ModelServiceInterface
             return false;
         }
 
-        if (App::bound($modelClass)) {
-            try {
-                $instance = App::make($modelClass);
-                $reflection = new ReflectionClass($instance);
-                $modelClass = $reflection->getName();
-            } catch (\Throwable $e) {
-                return false;
-            }
-        }
-
         // Check if the class exists
         if (!class_exists($modelClass)) {
             return false;

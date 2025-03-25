@@ -40,7 +40,8 @@ class ValidationTest extends TrinaTestCase
         ];
 
         // Make API request
-        $response = $this->postJson('/api/crud/validation_model', $data);
+        $modelName = str_replace('\\', '.', ValidationModel::class);
+        $response = $this->postJson('/api/crud/' . $modelName, $data);
 
         // Assert validation failure response
         $response->assertStatus(422)
@@ -62,8 +63,9 @@ class ValidationTest extends TrinaTestCase
             'description' => 'This is a valid description'
         ];
 
+        $modelName = str_replace('\\', '.', ValidationModel::class);
         // Make API request
-        $response = $this->postJson('/api/crud/validation_model', $data);
+        $response = $this->postJson('/api/crud/' . $modelName, $data);
 
         // Assert successful response
         $response->assertStatus(201)
@@ -95,8 +97,9 @@ class ValidationTest extends TrinaTestCase
             'price' => -5 // Negative price (min:0)
         ];
 
+        $modelName = str_replace('\\', '.', ValidationModel::class);
         // Make API request
-        $response = $this->putJson("/api/crud/validation_model/{$model->id}", $data);
+        $response = $this->putJson("/api/crud/" . $modelName . "/{$model->id}", $data);
 
         // Assert validation failure response
         $response->assertStatus(422)
@@ -133,7 +136,8 @@ class ValidationTest extends TrinaTestCase
         ];
 
         // Make API request
-        $response = $this->putJson("/api/crud/validation_model/{$model->id}", $data);
+        $modelName = str_replace('\\', '.', ValidationModel::class);
+        $response = $this->putJson("/api/crud/" . $modelName . "/{$model->id}", $data);
 
         // Assert successful response
         $response->assertStatus(200)

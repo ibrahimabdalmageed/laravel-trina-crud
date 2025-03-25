@@ -2,6 +2,7 @@
 
 namespace Trinavo\TrinaCrud\Traits;
 
+use Illuminate\Support\Facades\Schema;
 use Trinavo\TrinaCrud\Contracts\AuthorizationServiceInterface;
 use Trinavo\TrinaCrud\Enums\CrudAction;
 
@@ -39,5 +40,12 @@ trait HasCrud
         // Default implementation returns an empty array
         // Models should override this method to provide their specific validation rules
         return [];
+    }
+
+
+    public function getAllFields(): array
+    {
+        $columns = Schema::getColumnListing($this->getTable());
+        return $columns;
     }
 }

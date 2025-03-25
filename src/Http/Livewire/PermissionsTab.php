@@ -16,7 +16,9 @@ class PermissionsTab extends Component
     public string $modelFilter = '';
     public array $roles = [];
     public array $permissions = [];
-
+    public bool $attributesModalVisible = false;
+    public string $selectedModel = '';
+    public array $selectedModelAttributes = [];
     /**
      * @var string[]
      */
@@ -123,5 +125,96 @@ class PermissionsTab extends Component
         }
 
         $this->loadPermissions();
+    }
+
+    public function showAttributesModal($model)
+    {
+        $this->attributesModalVisible = true;
+        $this->selectedModel = $model;
+        $this->loadSelectedModelAttributes($model);
+    }
+
+    private function loadSelectedModelAttributes()
+    {
+        $attributes = collect($this->getModelService()->getSchema())
+            ->first(function (ModelSchema $model) {
+                return str_replace('\\', '.', $model->getModelName()) === $this->selectedModel;
+            })
+            ->getAllFields();
+
+
+        /**
+         * @var AuthorizationServiceInterface $authService
+         */
+        $authService = $this->getAuthorizationService();
+        $this->selectedModelAttributes = [];
+        foreach ($attributes as $attribute) {
+            $read = $authService->roleHasAttributePermission(
+                $this->selectedModel,
+                $attribute,
+                CrudAction::READ,
+                $this->selectedRole
+            );
+
+            $create = $authService->roleHasAttributePermission(
+                $this->selectedModel,
+                $attribute,
+                CrudAction::CREATE,
+                $this->selectedRole
+            );
+            $update = $authService->roleHasAttributePermission(
+                $this->selectedModel,
+                $attribute,
+                CrudAction::UPDATE,
+                $this->selectedRole
+            );
+            $delete = $authService->roleHasAttributePermission(
+                $this->selectedModel,
+                $attribute,
+                CrudAction::DELETE,
+                $this->selectedRole
+            );
+
+            $this->selectedModelAttributes[$attribute] = [
+                CrudAction::READ->value => $read,
+                CrudAction::CREATE->value => $create,
+                CrudAction::UPDATE->value => $update,
+                CrudAction::DELETE->value => $delete,
+            ];
+        }
+    }
+
+    public function toggleAttributePermission($action, $attribute)
+    {
+        if ($this->getAuthorizationService()->roleHasAttributePermission(
+            $this->selectedModel,
+            $attribute,
+            CrudAction::from($action),
+            $this->selectedRole
+        )) {
+
+            $this->getAuthorizationService()->setRoleAttributePermission(
+                $this->selectedModel,
+                $attribute,
+                CrudAction::from($action),
+                $this->selectedRole,
+                false
+            );
+        } else {
+            $this->getAuthorizationService()->setRoleAttributePermission(
+                $this->selectedModel,
+                $attribute,
+                CrudAction::from($action),
+                $this->selectedRole,
+                true
+            );
+        }
+
+        $this->loadSelectedModelAttributes();
+    }
+
+    public function closeAttributesModal()
+    {
+        $this->attributesModalVisible = false;
     }
 }

@@ -12,20 +12,20 @@ class ModelSchema implements JsonSerializable
     protected string $modelName;
 
     /**
-     * @var array The fillable attributes
+     * @var array The fields
      */
-    protected array $fillables = [];
+    protected array $allFields = [];
 
     /**
      * Create a new ModelSchema instance
      * 
      * @param string $modelName
-     * @param array $fillables
+     * @param array $allFields
      */
-    public function __construct(string $modelName, array $fillables = [])
+    public function __construct(string $modelName, array $allFields = [])
     {
         $this->modelName = $modelName;
-        $this->fillables = $fillables;
+        $this->allFields = $allFields;
     }
 
     /**
@@ -43,20 +43,20 @@ class ModelSchema implements JsonSerializable
      * 
      * @return array
      */
-    public function getFillables(): array
+    public function getAllFields(): array
     {
-        return $this->fillables;
+        return $this->allFields;
     }
 
     /**
      * Set the fillable attributes
      * 
-     * @param array $fillables
+     * @param array $allFields
      * @return self
      */
-    public function setFillables(array $fillables): self
+    public function setAllFields(array $allFields): self
     {
-        $this->fillables = $fillables;
+        $this->allFields = $allFields;
         return $this;
     }
 
@@ -68,8 +68,8 @@ class ModelSchema implements JsonSerializable
     public function jsonSerialize(): array
     {
         return [
-            'modelName' => $this->modelName,
-            'fillables' => $this->fillables,
+            'model' => $this->modelName,
+            'all_fields' => $this->allFields,
         ];
     }
 

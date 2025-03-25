@@ -136,7 +136,10 @@ class SpatiePermissionAuthorizationService implements AuthorizationServiceInterf
 
             $role->givePermissionTo($permissionName);
         } else {
-            $role->revokePermissionTo($permissionName);
+            try {
+                $role->revokePermissionTo($permissionName);
+            } catch (PermissionDoesNotExist $e) {
+            }
         }
     }
 
@@ -145,21 +148,41 @@ class SpatiePermissionAuthorizationService implements AuthorizationServiceInterf
         if (!$user instanceof Model) {
             $user = $this->getUser($user);
         }
-
+        $permissionName = $action->toModelPermissionString($modelName);
         if ($enable) {
-            $user->givePermissionTo($action->toModelPermissionString($modelName));
+            try {
+                Permission::create([
+                    'name' => $permissionName
+                ]);
+            } catch (PermissionAlreadyExists $e) {
+            }
+
+            $user->givePermissionTo($permissionName);
         } else {
-            $user->removePermissionTo($action->toModelPermissionString($modelName));
+            try {
+                $user->removePermissionTo($permissionName);
+            } catch (PermissionDoesNotExist $e) {
+            }
         }
     }
 
     public function setRoleAttributePermission(string $modelName, string $attribute, CrudAction $action, string $role, bool $enable): void
     {
         $role = Role::findByName($role);
+        $permissionName = $action->toAttributePermissionString($modelName, $attribute);
         if ($enable) {
-            $role->givePermissionTo($action->toAttributePermissionString($modelName, $attribute));
+            try {
+                Permission::create([
+                    'name' => $permissionName
+                ]);
+            } catch (PermissionAlreadyExists $e) {
+            }
+            $role->givePermissionTo($permissionName);
         } else {
-            $role->removePermissionTo($action->toAttributePermissionString($modelName, $attribute));
+            try {
+                $role->revokePermissionTo($permissionName);
+            } catch (PermissionDoesNotExist $e) {
+            }
         }
     }
 
@@ -169,10 +192,20 @@ class SpatiePermissionAuthorizationService implements AuthorizationServiceInterf
             $user = $this->getUser($user);
         }
 
+        $permissionName = $action->toAttributePermissionString($modelName, $attribute);
         if ($enable) {
-            $user->givePermissionTo($action->toAttributePermissionString($modelName, $attribute));
+            try {
+                Permission::create([
+                    'name' => $permissionName
+                ]);
+            } catch (PermissionAlreadyExists $e) {
+            }
+            $user->givePermissionTo($permissionName);
         } else {
-            $user->removePermissionTo($action->toAttributePermissionString($modelName, $attribute));
+            try {
+                $user->removePermissionTo($permissionName);
+            } catch (PermissionDoesNotExist $e) {
+            }
         }
     }
 

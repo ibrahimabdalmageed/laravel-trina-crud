@@ -537,7 +537,7 @@ class ModelService implements ModelServiceInterface
         return true;
     }
 
-    public function getModel(string|Model $model): ?Model
+    public function getModel(string|Model $model): Model|HasCrud|null
     {
         $modelClass = is_string($model) ? $model : get_class($model);
 
@@ -580,9 +580,10 @@ class ModelService implements ModelServiceInterface
             $files = glob($path . '/*.php');
             foreach ($files as $file) {
                 $modelSchema = $this->parseModelFile($file, $namespace);
-                if ($modelSchema) {
-                    $models[] = $modelSchema;
+                if (!$modelSchema) {
+                    continue;
                 }
+                $models[] = $modelSchema;
             }
         }
         return $models;
@@ -617,10 +618,12 @@ class ModelService implements ModelServiceInterface
             return null;
         }
 
-        // Get the model instance to extract fillable attributes
         $model = $this->getModel($fullClassName);
-        $fillables = $model ? $model->getCrudFillable(CrudAction::READ) : [];
+        if (!$model) {
+            return null;
+        }
+        $fields = $model->getAllFields();
 
-        return new ModelSchema($fullClassName, $fillables);
+        return new ModelSchema($fullClassName, $fields);
     }
 }

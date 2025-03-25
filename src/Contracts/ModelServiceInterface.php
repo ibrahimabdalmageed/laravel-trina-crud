@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Trinavo\TrinaCrud\Enums\CrudAction;
 use Trinavo\TrinaCrud\Models\ModelSchema;
+use Trinavo\TrinaCrud\Traits\HasCrud;
 
 interface ModelServiceInterface
 {
@@ -136,9 +137,9 @@ interface ModelServiceInterface
      * Get the model
      * 
      * @param string|Model $modelName
-     * @return ?Model
+     * @return Model|HasCrud|null
      */
-    public function getModel(string|Model $modelName): ?Model;
+    public function getModel(string|Model $modelName): Model|HasCrud|null;
 
 
     /**

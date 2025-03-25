@@ -59,25 +59,22 @@ If your application has complex ownership rules, you can implement a custom owne
 
 namespace App\Services;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\Relation;
 use Trinavo\TrinaCrud\Contracts\OwnershipServiceInterface;
 
 class TeamOwnershipService implements OwnershipServiceInterface
 {
-    public function isOwner(Model $model): bool
-    {
+    public function addOwnershipQuery(
+        Builder|Relation $query,
+        Model $model,
+        string $action
+    ): Builder|Relation {
         $user = auth()->user();
         
-        // Example: Check if user belongs to the team that owns this resource
-        return $model->team_id === $user->team_id;
-    }
-
-    public function setOwner(Model $model): void
-    {
-        $user = auth()->user();
-        
-        // Example: Set the owner to the user's team
-        $model->team_id = $user->team_id;
+        // Example: Limit query to only show records that belong to the user's team
+        return $query->where('team_id', $user->team_id);
     }
 }
 ```

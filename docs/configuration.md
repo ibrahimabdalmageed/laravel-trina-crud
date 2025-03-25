@@ -111,21 +111,22 @@ Similarly, you can replace the default ownership service with your own implement
 
 namespace App\Services;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\Relation;
 use Trinavo\TrinaCrud\Contracts\OwnershipServiceInterface;
 
 class CustomOwnershipService implements OwnershipServiceInterface
 {
-    public function isOwner(Model $model): bool
-    {
+    public function addOwnershipQuery(
+        Builder|Relation $query,
+        Model $model,
+        string $action
+    ): Builder|Relation {
         // Your custom ownership logic here
-        // Return true if the current user owns the model
-        return true;
-    }
-
-    public function setOwner(Model $model): void
-    {
-        // Logic to set the current user as the owner of the model
+        // For example, limit query to only return records owned by the current user
+        $user = auth()->user();
+        return $query->where('user_id', $user->id);
     }
 }
 ```

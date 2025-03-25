@@ -21,69 +21,69 @@ By using TrinaCrud, you can reduce boilerplate code and focus on building your a
 
 ### Getting Started
 
-- [Installation Guide](installation.md)
-- [Quick Start Tutorial](quick-start.md)
-- [Configuration Options](configuration.md)
+- [Installation Guide](pages/installation.md)
+- [Quick Start Tutorial](pages/quick-start.md)
+- [Configuration Options](pages/configuration.md)
 
 ### Core Concepts
 
-- [The HasCrud Trait](has-crud-trait.md)
-- [Automatic Validation](schema-validation.md)
-- [Custom Validation Rules](custom-validation.md)
-- [Controller Integration](controller-integration.md)
+- [The HasCrud Trait](pages/has-crud-trait.md)
+- [Automatic Validation](pages/schema-validation.md)
+- [Custom Validation Rules](pages/custom-validation.md)
+- [Controller Integration](pages/controller-integration.md)
 
 ### Security & Authorization
 
-- [Permission Management](permissions.md)
-- [Integration with Spatie Permission](spatie-integration.md)
-- [Model & Attribute Security](model-attribute-security.md)
-- [Ownership & Data Access Control](ownership.md)
+- [Permission Management](pages/permissions.md)
+- [Integration with Spatie Permission](pages/spatie-integration.md)
+- [Model & Attribute Security](pages/model-attribute-security.md)
+- [Ownership & Data Access Control](pages/ownership.md)
 
 ### API Development
 
-- [API Endpoints](api-endpoints.md)
-- [Response Formatting](api-responses.md)
-- [Error Handling](error-handling.md)
-- [API Versioning](api-versioning.md)
-- [Schema Endpoint](schema-endpoint.md)
+- [API Endpoints](pages/api-endpoints.md)
+- [Response Formatting](pages/api-responses.md)
+- [Error Handling](pages/error-handling.md)
+- [API Versioning](pages/api-versioning.md)
+- [Schema Endpoint](pages/schema-endpoint.md)
 
 ### User Interface
 
-- [Admin Permissions UI](admin-ui.md)
-- [Permission Matrix Management](permission-matrix.md)
-- [Role Assignment Interface](role-assignment.md)
+- [Admin Permissions UI](pages/admin-ui.md)
+- [Permission Matrix Management](pages/permission-matrix.md)
+- [Role Assignment Interface](pages/role-assignment.md)
 
 ### Advanced Topics
 
-- [Custom Controller Actions](custom-actions.md)
-- [Extending Base Controllers](extending-controllers.md)
-- [Event Handling](events.md)
-- [Testing CRUD Endpoints](testing.md)
-- [Performance Optimization](performance.md)
+- [Custom Controller Actions](pages/custom-actions.md)
+- [Extending Base Controllers](pages/extending-controllers.md)
+- [Event Handling](pages/events.md)
+- [Testing CRUD Endpoints](pages/testing.md)
+- [Performance Optimization](pages/performance.md)
 
 ### Examples & Tutorials
 
-- [Complete Application Example](example-app.md)
-- [User Management System](user-management-example.md)
-- [Product Catalog with Categories](product-catalog-example.md)
-- [Building a Blog with TrinaCrud](blog-example.md)
+- [Complete Application Example](pages/example-app.md)
+- [User Management System](pages/user-management-example.md)
+- [Product Catalog with Categories](pages/product-catalog-example.md)
+- [Building a Blog with TrinaCrud](pages/blog-example.md)
 
 ### Reference
 
-- [API Reference](api-reference.md)
-- [Configuration Reference](config-reference.md)
-- [Troubleshooting & FAQ](troubleshooting.md)
+- [API Reference](pages/api-reference.md)
+- [Configuration Reference](pages/config-reference.md)
+- [Troubleshooting & FAQ](pages/troubleshooting.md)
 
 ## Contributing
 
-We welcome contributions to both the package and this documentation. Please see our [contribution guidelines](contributing.md) for more information.
+We welcome contributions to both the package and this documentation. Please see our [contribution guidelines](pages/contributing.md) for more information.
 
 ## Support
 
 If you encounter any issues or have questions, please:
 
-- Check the [Troubleshooting & FAQ](troubleshooting.md) page
-- Open an issue on our [GitHub repository](https://github.com/trinavo/laravel-trina-crud/issues)
+- Check the [Troubleshooting & FAQ](pages/troubleshooting.md) page
+- Open an issue on our [GitHub repository](https://github.com/doonfrs/laravel-trina-crud/issues)
 - Ask a question on the [Laravel community channels](https://laravel.com/docs/master/contributions#support-questions)
 
 ## License

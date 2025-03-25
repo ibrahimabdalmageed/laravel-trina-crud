@@ -174,6 +174,7 @@ class ModelService implements ModelServiceInterface
      */
     public function create(string $modelName, array $data): Model
     {
+
         if (!$this->authorizationService->authHasModelPermission($modelName, CrudAction::CREATE)) {
             throw new NotFoundHttpException('You are not authorized to create this model');
         }
@@ -516,13 +517,36 @@ class ModelService implements ModelServiceInterface
 
     public function verifyModel(string $modelClass): bool
     {
+        // First, sanitize the model class name to prevent malicious input
+        if (preg_match('/[^a-zA-Z0-9_\\\\.]/', $modelClass)) {
+            return false;
+        }
 
         $modelClass = str_replace('.', '\\', $modelClass);
 
+        // Check against whitelist of allowed model namespaces
+        $allowedNamespaces = config('trina-crud.allowed_model_namespaces', []);
+        $isAllowed = false;
+
+        foreach ($allowedNamespaces as $namespace) {
+            if (strpos($modelClass, $namespace) === 0) {
+                $isAllowed = true;
+                break;
+            }
+        }
+
+        if (!$isAllowed) {
+            return false;
+        }
+
         if (App::bound($modelClass)) {
-            $instance = App::make($modelClass);
-            $reflection = new ReflectionClass($instance);
-            $modelClass = $reflection->getName();
+            try {
+                $instance = App::make($modelClass);
+                $reflection = new ReflectionClass($instance);
+                $modelClass = $reflection->getName();
+            } catch (\Throwable $e) {
+                return false;
+            }
         }
 
         // Check if the class exists
@@ -549,16 +573,19 @@ class ModelService implements ModelServiceInterface
 
         $modelClass = str_replace('.', '\\', $modelClass);
 
+
         if (!$this->verifyModel($modelClass)) {
             return null;
         }
 
-        if (is_string($model)) {
-            $model = app($modelClass);
+        try {
+            if (is_string($model)) {
+                $model = app($modelClass);
+            }
+            return $model;
+        } catch (\Throwable $e) {
+            return null;
         }
-
-
-        return $model;
     }
 
     public function getRelatedModel(string|Model $model, string $relation): ?Model
@@ -580,25 +607,62 @@ class ModelService implements ModelServiceInterface
      */
     public function getSchema(?string $modelName = null): array
     {
+        // Sanitize the model name to prevent injection attacks
+        if ($modelName !== null) {
+            // Strip any path traversal patterns or special characters
+            if (preg_match('/[\/\\\\\.]{2,}|[^a-zA-Z0-9_\.]/', $modelName)) {
+                return [];
+            }
+        }
+
         //scan all model paths from config model_paths
         $models = [];
         foreach (config('trina-crud.model_paths') as $path) {
             $namespace = null;
 
             if ($modelName) {
-                //get the file name from the model name
+                // Get only the class name portion to prevent directory traversal
                 $modelName = explode('.', $modelName);
-                $modelName = $modelName[count($modelName) - 1];
-                $files = glob($path . '/' . $modelName . '.php');
-            } else {
-                $files = glob($path . '/*.php');
-            }
-            foreach ($files as $file) {
-                $modelSchema = $this->parseModelFile($file, $namespace);
-                if (!$modelSchema) {
+                $className = end($modelName);
+
+                // Further sanitize the class name
+                $className = preg_replace('/[^a-zA-Z0-9_]/', '', $className);
+
+                // Only proceed if we have a valid class name
+                if (empty($className)) {
                     continue;
                 }
-                $models[] = $modelSchema;
+
+                // Use realpath to resolve any ../ or other potential path traversal
+                $fullPath = realpath($path) . DIRECTORY_SEPARATOR . $className . '.php';
+
+                // Check the resolved path is still within the allowed path
+                if (!$fullPath || strpos($fullPath, realpath($path)) !== 0) {
+                    continue;
+                }
+
+                $files = file_exists($fullPath) ? [$fullPath] : [];
+            } else {
+                // Ensure the path is safe
+                $safePath = realpath($path);
+                if (!$safePath) {
+                    continue;
+                }
+
+                $files = glob($safePath . DIRECTORY_SEPARATOR . '*.php');
+            }
+
+            foreach ($files as $file) {
+                try {
+                    $modelSchema = $this->parseModelFile($file, $namespace);
+                    if (!$modelSchema) {
+                        continue;
+                    }
+                    $models[] = $modelSchema;
+                } catch (\Throwable $e) {
+                    // Skip files that cause errors
+                    continue;
+                }
             }
         }
         return $models;
@@ -613,17 +677,51 @@ class ModelService implements ModelServiceInterface
      */
     public function parseModelFile(string $file, ?string $namespace = null): ?ModelSchema
     {
+        // Validate the file path
+        if (!file_exists($file) || !is_file($file)) {
+            return null;
+        }
+
+        // Ensure the file is within allowed directory paths
+        $isAllowedPath = false;
+        foreach (config('trina-crud.model_paths') as $path) {
+            $safePath = realpath($path);
+            if ($safePath && strpos(realpath($file), $safePath) === 0) {
+                $isAllowedPath = true;
+                break;
+            }
+        }
+
+        if (!$isAllowedPath) {
+            return null;
+        }
+
         //get the class name from the file name
-        $className = str_replace('.php', '', $file);
-        $className = str_replace(dirname($file) . '/', '', $className);
+        $className = basename($file, '.php');
 
         if (!$namespace) {
-            $lines = file($file, 10);
-            foreach ($lines as $line) {
-                if (preg_match('/namespace\s+([\\a-zA-Z0-9_]+);/', $line, $matches)) {
-                    $namespace = $matches[1];
-                    break;
+            try {
+                // Limit reading only first few lines to find namespace
+                $lines = @file($file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES, null);
+                if ($lines === false) {
+                    return null;
                 }
+
+                // Only read up to the first 20 lines to find namespace
+                $lines = array_slice($lines, 0, 20);
+
+                foreach ($lines as $line) {
+                    if (preg_match('/namespace\s+([\\a-zA-Z0-9_]+);/', $line, $matches)) {
+                        $namespace = $matches[1];
+                        break;
+                    }
+                }
+
+                if (!$namespace) {
+                    return null;
+                }
+            } catch (\Throwable $e) {
+                return null;
             }
         }
 
@@ -637,10 +735,14 @@ class ModelService implements ModelServiceInterface
         if (!$model) {
             return null;
         }
-        $fields = Schema::getColumnListing($model->getTable());
 
-        $fullClassName = str_replace('\\', '.', $fullClassName);
+        try {
+            $fields = Schema::getColumnListing($model->getTable());
+            $fullClassName = str_replace('\\', '.', $fullClassName);
 
-        return new ModelSchema($fullClassName, $fields);
+            return new ModelSchema($fullClassName, $fields);
+        } catch (\Throwable $e) {
+            return null;
+        }
     }
 }

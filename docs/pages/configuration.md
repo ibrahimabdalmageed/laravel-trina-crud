@@ -44,6 +44,41 @@ TRINA_CRUD_ROUTE_PREFIX=api/v1
 
 Customize these to match your application's authentication and authorization requirements.
 
+## Security Configuration
+
+### Model Namespace Restrictions
+
+```php
+'allowed_model_namespaces' => [
+    'App\\Models',
+    // Add other authorized namespaces here
+],
+```
+
+This is an important security feature that restricts which model namespaces can be accessed through the TrinaCrud API. Only models within these namespaces will be available for CRUD operations.
+
+**Why this matters:**
+
+- Prevents attackers from accessing sensitive system classes
+- Restricts API access to only your intended models
+- Reduces the attack surface of your application
+
+**Best practices:**
+
+1. Use the most specific namespaces possible (e.g., `App\\Models\\Public` instead of `App\\`)
+2. For multi-module applications, list each module's namespace explicitly
+3. Never include root PHP namespaces or framework system namespaces
+
+**Example configuration for a complex application:**
+
+```php
+'allowed_model_namespaces' => [
+    'App\\Models\\Public',
+    'App\\Models\\Shop', 
+    'Modules\\Blog\\Models',
+],
+```
+
 ## Service Customization
 
 TrinaCrud is built with dependency injection in mind, allowing you to replace core services with your own implementations.

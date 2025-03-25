@@ -14,7 +14,34 @@ return [
     'ownership_service' => env('TRINA_CRUD_OWNERSHIP_TYPE', 'ownable'),
     'ownership_field' => env('TRINA_CRUD_OWNERSHIP_FIELD', 'user_id'),
     'model_paths' => [
-        base_path('app/Models'),
+        app_path('app/Models'),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Allowed Model Namespaces
+    |--------------------------------------------------------------------------
+    |
+    | This is a security feature that restricts which model namespaces are allowed
+    | to be loaded by this package. Only models in these namespaces will be
+    | accessible through the CRUD interface.
+    |
+    | This setting helps prevent potential security vulnerabilities by ensuring that
+    | only your application's intended models can be accessed via the API. Without
+    | this restriction, a malicious user could potentially attempt to access sensitive
+    | system classes or models outside your application's intended scope.
+    |
+    | Example:
+    |   - 'App\\Models' - Allow access to all models in App\Models namespace
+    |   - 'App\\Models\\Public' - Restrict to only models in a specific subfolder
+    |
+    | For multi-module applications, you may need to add additional namespaces.
+    | Always use the most specific namespaces possible for better security.
+    |
+    */
+    'allowed_model_namespaces' => [
+        'App\\Models',
+        // Add other authorized namespaces here
     ],
 
     /*

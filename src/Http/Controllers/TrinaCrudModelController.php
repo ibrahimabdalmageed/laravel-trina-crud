@@ -103,8 +103,13 @@ class TrinaCrudModelController extends Controller
     ) {
         try {
 
+            $data = $request->json();
+            if (!$data) {
+                $data = $request->all();
+            }
+
             // Filter input data to exclude non-column fields
-            $data = collect($request->all())->except(['model'])->toArray();
+            $data = collect($data)->except(['model'])->toArray();
 
             return $this->modelService->create($model, $data);
         } catch (NotFoundHttpException $e) {

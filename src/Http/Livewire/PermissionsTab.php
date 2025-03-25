@@ -213,6 +213,7 @@ class PermissionsTab extends Component
         $this->loadSelectedModelAttributes();
     }
 
+
     public function closeAttributesModal()
     {
         $this->attributesModalVisible = false;

@@ -40,7 +40,7 @@ interface ModelServiceInterface
      * @param array $attributes
      * @param array|null $with
      * @param array $relationAttributes
-     * @return Model
+     * @return Model|null
      */
     public function find(
         string $modelName,
@@ -48,7 +48,7 @@ interface ModelServiceInterface
         array $attributes = [],
         ?array $with = null,
         array $relationAttributes = []
-    ): Model;
+    ): Model|null;
 
 
     /**
@@ -166,15 +166,4 @@ interface ModelServiceInterface
      * @return ModelSchema|null
      */
     public function parseModelFile(string $file, ?string $namespace = null): ?ModelSchema;
-
-
-    /**
-     * Filter attributes based on user permissions
-     * 
-     * @param string|Model $model
-     * @param CrudAction $action
-     * @param array|null $requestedAttributes
-     * @return array
-     */
-    public function filterAuthorizedAttributes(string|Model $model, CrudAction $action, ?array $requestedAttributes = null): array;
 }

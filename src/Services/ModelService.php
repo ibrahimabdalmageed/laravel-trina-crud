@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\App;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use ReflectionClass;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -69,12 +70,22 @@ class ModelService implements ModelServiceInterface
         $query = $this->scopeAuthorizedRecords($query, $model, CrudAction::READ);
 
         // Filter attributes based on permissions
-        $authorizedAttributes  = $this->filterAuthorizedAttributes($model, CrudAction::READ, $attributes);
+
+        $selectableAttributes = $model->getCrudFillable(CrudAction::READ);
+
+        if (!empty($attributes)) {
+            $authorizedAttributes  = array_intersect($selectableAttributes, $attributes);
+        } else {
+            $authorizedAttributes = $selectableAttributes;
+        }
+
+        if (empty($authorizedAttributes)) {
+            $query->where('1=-1');
+            return $query->paginate($perPage);
+        }
 
         // Select only authorized attributes if specified
-        if (!empty($authorizedAttributes)) {
-            $query->select($authorizedAttributes);
-        }
+        $query->select($authorizedAttributes);
 
         // Apply filters
         $query = $this->applyAuthorizedFilters($query, $model, $filters, CrudAction::READ);
@@ -96,7 +107,7 @@ class ModelService implements ModelServiceInterface
      * @param array $attributes The attributes to select
      * @param array|null $with The relations to load
      * @param array $relationAttributes The attributes to select for each relation
-     * @return Model
+     * @return Model|null
      * @throws NotFoundHttpException
      */
     public function find(
@@ -105,7 +116,7 @@ class ModelService implements ModelServiceInterface
         array $attributes = [],
         ?array $with = null,
         array $relationAttributes = []
-    ): Model {
+    ): ?Model {
 
         if (!$this->authorizationService->authHasModelPermission($modelName, CrudAction::READ)) {
             throw new NotFoundHttpException('You are not authorized to read this model');
@@ -125,11 +136,17 @@ class ModelService implements ModelServiceInterface
         $query = $this->scopeAuthorizedRecords($query, $model, CrudAction::READ);
 
         // Filter attributes based on permissions
-        $authorizedAttributes  = $this->filterAuthorizedAttributes($model, CrudAction::READ, $attributes);
+        $selectableAttributes = $model->getCrudFillable(CrudAction::READ);
 
-        // Select only authorized attributes if specified
-        if (!empty($authorizedAttributes)) {
-            $query->select($authorizedAttributes);
+        if (!empty($attributes)) {
+            $authorizedAttributes  = array_intersect($selectableAttributes, $attributes);
+        } else {
+            $authorizedAttributes = $selectableAttributes;
+        }
+
+        if (empty($authorizedAttributes)) {
+            $query->where('1=-1');
+            return $query->first();
         }
 
         // Load relations if specified
@@ -177,6 +194,10 @@ class ModelService implements ModelServiceInterface
                 throw new \Illuminate\Validation\ValidationException($validator);
             }
         }
+
+        $createableAttributes = $model->getCrudFillable(CrudAction::CREATE);
+
+        $data = array_intersect_key($data, array_flip($createableAttributes));
 
         // Create a new record
         $record = $model->create($data);
@@ -311,22 +332,6 @@ class ModelService implements ModelServiceInterface
         );
     }
 
-    /**
-     * Filter attributes based on user permissions
-     *
-     * @param string|Model $model
-     * @param CrudAction $action
-     * @param array|null $requestedAttributes
-     * @return array
-     */
-    public function filterAuthorizedAttributes(string|Model $model, CrudAction $action, ?array $requestedAttributes = null): array
-    {
-        if (is_string($model)) {
-            $model = $this->getModel($model);
-        }
-
-        return $model->getCrudFillable($action);
-    }
 
     /**
      * Process 'with' relationships and ensure proper authorization
@@ -360,8 +365,9 @@ class ModelService implements ModelServiceInterface
             }
 
             // Get authorized attributes for the relation
-            $attributes = $attributesByRelation[$relation] ?? null;
-            $authorizedAttributes  = $this->filterAuthorizedAttributes($relatedModel, $action, $attributes);
+            $attributes = $attributesByRelation[$relation] ?? [];
+            $selectableAttributes = $relatedModel->getCrudFillable($action);
+            $authorizedAttributes  = array_intersect($selectableAttributes, $attributes);
 
             // Load relation with ownership scope and column restrictions
             $query->with([$relation => function ($q) use ($relatedModel, $authorizedAttributes, $action) {
@@ -622,7 +628,7 @@ class ModelService implements ModelServiceInterface
         if (!$model) {
             return null;
         }
-        $fields = $model->getAllFields();
+        $fields = Schema::getColumnListing($model->getTable());
 
         return new ModelSchema($fullClassName, $fields);
     }

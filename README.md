@@ -41,6 +41,12 @@ TrinaCrud uses Spatie Permission for authorization:
 ```bash
 composer require spatie/laravel-permission
 ```
+You should publish the migration and the config/permission.php config file with:
+
+```bash
+php artisan vendor:publish --provider="Spatie\Permission\PermissionServiceProvider"
+```
+
 
 Follow the [Spatie Permission installation instructions](https://spatie.be/docs/laravel-permission/v5/installation-laravel).
 
